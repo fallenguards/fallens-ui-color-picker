@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.1] - 2026-10-29
+
+### Fixed
+- On a character with the full ClassicUI Forever enabled, the picker now stays off instead of running beside it.
+
 ## [1.0.0] - 2026-10-29
 
 ### Added
