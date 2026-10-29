@@ -316,6 +316,13 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         if arg1 ~= ADDON then return end
         FallensUIColorPickerDB = FallensUIColorPickerDB or {}
         ns.db = FallensUIColorPickerDB
+        -- Saved by the build made from ClassicUI Forever (its dbVersion, past ours): it switched every setting outside
+        -- the theme off, the minimap button too. The theme's picks stay; the rest starts at our defaults.
+        if (tonumber(ns.db.dbVersion) or 0) > ns.DB_VERSION then
+            for key in pairs(ns.db) do
+                if ns.DB_DEFAULTS[key] == nil or key == "minimapButton" then ns.db[key] = nil end
+            end
+        end
         ns.CopyDefaults(ns.db, ns.DB_DEFAULTS)
         ns.db.dbVersion = ns.DB_VERSION
     elseif event == "PLAYER_LOGIN" then

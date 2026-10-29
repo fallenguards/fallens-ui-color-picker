@@ -1,6 +1,9 @@
 -- Loads an addon's toc files against a stubbed game, then runs ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD and
--- every frame's OnUpdate a few times. Usage: lua picker_smoke.lua <addon dir> <toc> <addon name> [inert]
-local dir, tocName, addon, inert = arg[1], arg[2], arg[3], arg[4] == "inert"
+-- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name> [inert|old]
+-- inert: the full ClassicUI Forever enabled; old: settings saved by the build made from ClassicUI Forever.
+-- luacheck: std lua54
+-- luacheck: ignore 111 112 113 121 122 212
+local dir, tocName, addon, inert, old = arg[1], arg[2], arg[3], arg[4] == "inert", arg[4] == "old"
 
 local Stub
 local stubMeta = {}
@@ -85,6 +88,10 @@ _G.tinsert, _G.tremove = table.insert, table.remove
 _G.securecallfunction = function(fn, ...) return fn(...) end
 _G.getmetatable = getmetatable
 
+if old then
+    _G.FallensUIColorPickerDB = { dbVersion = 29, minimapButton = false, bronzeTheme = true, themeDark = true,
+        themeBronze = false, welcomed = false, profiles = {}, windowPos = {} }
+end
 local ns = {}
 local toc = assert(io.open(dir .. "/" .. tocName)):read("a")
 local count = 0
@@ -120,6 +127,14 @@ for _ = 1, 3 do
             if not ok then print("ONUPDATE: " .. tostring(err)) break end
         end
     end
+end
+if old then
+    local db = _G.FallensUIColorPickerDB
+    local ok = db.minimapButton == true and db.bronzeTheme == true and db.themeDark == true and db.profiles == nil
+        and db.dbVersion == 1
+    print((ok and "PASS" or "FAIL") .. " old settings: minimap button " .. tostring(db.minimapButton) .. ", theme kept "
+        .. tostring(db.bronzeTheme and db.themeDark) .. ", leftovers gone " .. tostring(db.profiles == nil))
+    if not ok then os.exit(1) end
 end
 if not ns.INERT then
     print("db " .. tostring(ns.db ~= nil) .. ", modules " .. #(ns.modules or {}) .. ", slash " .. tostring(ns.SLASH))
