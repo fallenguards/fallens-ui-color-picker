@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This tracker is for **Fallen's UI Color Picker**: its folder is `FallensUIColorPicker` and its options open with `/fcui`.
+        This tracker is for **Fallen's UI Color Picker**: its folder is `FallensUIColorPicker` and its options open with `/fcp`.
   - type: textarea
     id: request
     attributes:
