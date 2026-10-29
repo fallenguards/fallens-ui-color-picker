@@ -1,0 +1,62 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This tracker is for **Fallen's UI Color Picker**: its folder is `FallensUIColorPicker` and its options open with `/fcui`.
+  - type: textarea
+    id: report
+    attributes:
+      label: What happened?
+      description: What you saw and what you expected instead. Say which window or part of the screen it is about.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen
+      description: The color or theme you picked, then what you opened or clicked, in order.
+      placeholder: |
+        1. Pick Custom color
+        2. Open ...
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: Status report
+      description: |
+        In game, type `/fcui status`. Either press **Select all**, copy with Ctrl+C and paste the text here, or attach a full screenshot that shows the status window and the problem together.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Lua errors
+      description: |
+        If the game showed an error, paste the first one here. To see errors, type `/console scriptErrors 1`, or install BugSack and BugGrabber (both are needed).
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: A screenshot helps more than anything. Drag the image into this box.
+    validations:
+      required: false
+  - type: dropdown
+    id: alone
+    attributes:
+      label: Does it still happen with only this addon turned on?
+      description: Turn everything else off in the addon list, restart the interface and try once more.
+      options:
+        - "Yes, it still happens with only this addon on"
+        - "No, it goes away with the rest turned off (say which one above if you found it)"
+        - "I have no other addons"
+        - "I did not try"
+    validations:
+      required: true
