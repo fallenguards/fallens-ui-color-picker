@@ -1,0 +1,51 @@
+## Interface: 16001, 120100, 120105
+## Title: Fallen's UI Color Picker
+## Notes: Recolor the game's whole interface: dark, bronze or any color you pick, on WoW Forever and retail.
+## Author: justawower
+## Version: 0.1.0
+## IconTexture: Interface\Icons\INV_Misc_Gem_Variety_01
+## Category: UI
+## AddonCompartmentFunc: FallensUIColorPicker_OnAddonCompartmentClick
+## SavedVariables: FallensUIColorPickerDB
+## LoadSavedVariablesFirst: 1
+## DefaultState: enabled
+
+Core\Localization.lua
+Locales\enUS.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Guard.lua
+
+Core\Core.lua
+Core\Defaults.lua
+Core\Settings.lua
+Core\Scheduler.lua
+Core\Util.lua
+Core\Gamepad.lua
+Core\Setters.lua
+Core\EditMode.lua
+Core\Hooks.lua
+
+Art\ThemeArt.lua
+Art\TextureData.lua
+Art\ThemeParts.lua
+Art\Textures.lua
+Art\Bronze.lua
+Art\ThemeFlat.lua
+Art\ThemeLayers.lua
+Art\BronzeClient.lua
+Art\GameArt.lua
+
+UI\Window.lua
+UI\Dress.lua
+UI\Portraits.lua
+UI\Escape.lua
+
+Options\Toggles.lua
+Options\ThemeRows.lua
+Options\LookPick.lua
+Options\Slash.lua
+
+Map\MinimapButton.lua
