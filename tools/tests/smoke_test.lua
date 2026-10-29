@@ -74,8 +74,17 @@ _G.hooksecurefunc = function() end
 _G.geterrorhandler = function() return function(e) error(e, 0) end end
 _G.wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
 _G.C_Timer = { After = function(_, fn) end, NewTicker = function() return Stub() end, NewTimer = function() return Stub() end }
-_G.C_AddOns = { GetAddOnEnableState = function(name) return (inert and name == "ClassicUIForever") and 2 or 0 end,
-    IsAddOnLoaded = function() return false end }
+-- The game keys a character by GUID: ClassicUI Forever is on for other characters always, for this one when inert.
+local ME = "Player-1-0000000A"
+_G.UnitGUID = function(unit) return unit == "player" and ME or nil end
+_G.C_AddOns = {
+    GetAddOnEnableState = function(name, character)
+        if name ~= "ClassicUIForever" then return 0 end
+        if character == ME then return inert and 2 or 0 end
+        return character == nil and 1 or 0
+    end,
+    IsAddOnLoaded = function() return false end,
+}
 _G.UIParent = NewFrame(nil, "UIParent")
 _G.Minimap = NewFrame(nil, "Minimap")
 _G.StaticPopupDialogs = {}
@@ -106,6 +115,10 @@ for line in toc:gmatch("[^\r\n]+") do
     end
 end
 print("loaded " .. count .. " files" .. (ns.INERT and " (inert)" or ""))
+if (ns.INERT == true) ~= inert then
+    print("FAIL stand-down: inert " .. tostring(ns.INERT) .. " with ClassicUI Forever on here " .. tostring(inert))
+    os.exit(1)
+end
 
 local function Fire(event, ...)
     for i = 1, #frames do

@@ -2,8 +2,8 @@ local _, ns = ...
 
 -- ClassicUI Forever (the full addon) carries this theme itself: with it enabled the picker stands down, every other
 -- file of ours returning at its first line, and says so once at login. Its standalone pieces run beside the picker.
--- Asked for this character: with no name the game answers for all of them, and one enabled elsewhere would count.
-if C_AddOns.GetAddOnEnableState("ClassicUIForever", (UnitName("player"))) > 0 then
+-- Asked for this character by its GUID, as the game's AddOns list asks: with none the game answers for every character.
+if C_AddOns.GetAddOnEnableState("ClassicUIForever", UnitGUID("player")) > 0 then
     ns.INERT = true
     StaticPopupDialogs.FALLENSUICOLORPICKER_STANDS_DOWN = {
         text = ns.L["PICKER_STANDS_DOWN"],
