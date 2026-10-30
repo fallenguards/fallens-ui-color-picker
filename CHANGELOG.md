@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.2] - 2026-10-30
+
+### Fixed
+- With the full ClassicUI Forever enabled, the notice that the picker stays off shows once instead of at every login. Its entry in the game's addon menu by the minimap still shows it.
+
 ## [1.0.1] - 2026-10-29
 
 ### Fixed
