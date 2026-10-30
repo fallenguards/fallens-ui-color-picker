@@ -1,4 +1,4 @@
-## Interface: 16001, 120100, 120105
+## Interface: 16001, 120100, 120105, 120107
 ## Title: Fallen's UI Color Picker
 ## Notes: Recolor the game's whole interface: dark, bronze or any color you pick, on WoW Forever and retail.
 ## Author: justawower
