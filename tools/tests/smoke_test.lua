@@ -16,7 +16,9 @@ stubMeta.__index = function(t, k)
         or k == "GetFrameLevel" or k == "GetStringWidth" or k == "GetStringHeight" or k == "GetEffectiveAlpha" then
         return function() return 1 end
     end
-    if k == "GetRegions" or k == "GetChildren" or k == "GetPoint" or k == "GetCenter" or k == "GetLeft" or k == "GetTop" then
+    -- No children or regions at all, as the game answers: not one nil.
+    if k == "GetRegions" or k == "GetChildren" then return function() end end
+    if k == "GetPoint" or k == "GetCenter" or k == "GetLeft" or k == "GetTop" then
         return function() return nil end
     end
     if k == "IsShown" or k == "IsVisible" or k == "IsForbidden" or k == "IsProtected" or k == "IsObjectType"
@@ -58,9 +60,11 @@ local function NewFrame(_, name)
     return f
 end
 
+-- Saved variables start nil, as on a first login (a stub there read as saved settings).
+local SAVED = { FallensUIColorPickerDB = true }
 local env = setmetatable({}, { __index = function(t, k)
     local v = rawget(_G, k)
-    if v ~= nil then return v end
+    if v ~= nil or SAVED[k] then return v end
     v = Stub()
     rawset(t, k, v)
     return v
@@ -76,7 +80,9 @@ _G.InCombatLockdown = function() return false end
 _G.issecretvalue = function() return false end
 _G.issecurevariable = function() return true end
 _G.hooksecurefunc = function() end
-_G.geterrorhandler = function() return function(e) error(e, 0) end end
+-- Errors the addon reports through the game's handler (its SafeCall): each fails the run at the end.
+local reported = {}
+_G.geterrorhandler = function() return function(e) reported[#reported + 1] = tostring(e) end end
 _G.wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
 _G.C_Timer = { After = function(_, fn) end, NewTicker = function() return Stub() end, NewTimer = function() return Stub() end }
 -- The game keys a character by GUID: ClassicUI Forever is on for other characters always, for this one when inert.
@@ -91,7 +97,21 @@ _G.C_AddOns = {
     IsAddOnLoaded = function() return false end,
 }
 _G.UIParent = NewFrame(nil, "UIParent")
+_G.C_NamePlate = { GetNamePlates = function() return {} end }
+-- Numbers where the game gives numbers (a drag's OnUpdate runs here every frame); Lua 5.1's atan2.
+_G.GetCursorPosition = function() return 0, 0 end
+math.atan2 = math.atan2 or math.atan -- luacheck: ignore 142 143
+-- A forbidden frame in the walks, beside a window and inside it: every method but IsForbidden refuses addon code, as
+-- the game's do (asking one its name ended the whole theme walk once).
+local forbidden = setmetatable({}, { __index = function(_, k)
+    if k == "IsForbidden" then return function() return true end end
+    return function() error("a forbidden frame was asked " .. k, 2) end
+end })
+local window = NewFrame(nil, "SmokeWindow")
+rawset(window, "GetChildren", function() return forbidden end)
+rawset(_G.UIParent, "GetChildren", function() return window, forbidden end)
 _G.Minimap = NewFrame(nil, "Minimap")
+rawset(_G.Minimap, "GetCenter", function() return 0, 0 end)
 _G.StaticPopupDialogs = {}
 _G.SlashCmdList = {}
 _G.UnitName = function() return "Tester" end
@@ -165,4 +185,8 @@ if not ns.INERT then
     print("theme on (Dark) " .. (ok and "ran" or ("ERROR " .. tostring(err))))
     ok, err = pcall(ns.ToggleChanged, "themePartTooltips")
     print("part toggle " .. (ok and "ran" or ("ERROR " .. tostring(err))))
+end
+if #reported > 0 then
+    for _, e in ipairs(reported) do print("REPORTED " .. e) end
+    os.exit(1)
 end

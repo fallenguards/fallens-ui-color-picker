@@ -318,8 +318,16 @@ local function MatchIn(region, addon)
     if addon then ns.MarkAddonPiece(region) end
     if walking then walking[region] = want[region] end
 end
+-- Our own addons' frames that continue a window in the game's art (EasyFind's map side panel extends the map's
+-- border): their own textures as the window's, never their children (EasyFind paints those).
+local GAME_ART = { EasyFindMapSidePanel = true }
+local OwnGameArt
 local Walk
 local function Child(child, depth, addon)
+    -- A forbidden frame may not even be asked its name: the error ended the whole walk (bars left untinted).
+    if ns.IsForbidden(child) then return end
+    local name = child:GetName()
+    if type(name) == "string" and not ns.IsSecret(name) and GAME_ART[name] then return OwnGameArt(child) end
     if not isRoot[child] and not ns.bronze.PlainTree(child) and not (BROAD and Skipped(child)) then
         Walk(child, depth, addon)
     end
@@ -338,6 +346,20 @@ local function Tint()
         ns.TintGameArt(texture, kind ~= true and kind or nil)
     end
     ns.HoldThemeName(false)
+end
+
+-- Taken with the walk that found it, and again as it shows (it may be built after its window's walk).
+local ownWatched = setmetatable({}, { __mode = "k" })
+OwnGameArt = function(frame)
+    ns.EachRegion(frame, MatchIn, false)
+    if ownWatched[frame] then return end
+    ownWatched[frame] = true
+    ns.Sched.OnVisible(frame, "gameArt.own", function(shown)
+        if not shown or not ns.ThemeFor() then return end
+        wipe(want)
+        ns.EachRegion(frame, MatchIn, false)
+        Tint()
+    end)
 end
 
 -- A root's tree walked and its finds kept; hidden, its last finds stand in.
