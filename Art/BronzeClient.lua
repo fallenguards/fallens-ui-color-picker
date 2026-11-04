@@ -52,6 +52,37 @@ local FILES = {
     [130755] = "UI-CheckBox-Up.tga",
     [130752] = "UI-CheckBox-Down.tga",
 }
+-- Era's 1.x frames drawn round their picture, wherever the walk finds them. Never a background: its copy layer sat
+-- over the icon beside it (tools/tests/era_copies_test.lua).
+local ERA_FILES = {}
+if ns.OnEra() then
+    local function Era(id, name)
+        FILES[id], ERA_FILES[id] = name, true
+    end
+    local MICRO = { CharacterNightElf = 130789, Help = 130792, LFG = 130796, MainMenu = 130799, Quest = 130802,
+        Socials = 130805, Spellbook = 130808, Talents = 130811, World = 130814 }
+    for name, first in pairs(MICRO) do
+        Era(first, "UI-MicroButton-" .. name .. "-Disabled.blp")
+        Era(first + 1, "UI-MicroButton-" .. name .. "-Down.blp")
+        Era(first + 2, "UI-MicroButton-" .. name .. "-Up.blp")
+    end
+    for name, ids in pairs({ Achievement = { 235420, 235421, 235422 }, BStore = { 902315, 902316, 902317 },
+        EJ = { 525909, 525018, 525019 }, Mounts = { 615162, 615163, 615164 } }) do
+        Era(ids[1], "UI-MicroButton-" .. name .. "-Disabled.blp")
+        Era(ids[2], "UI-MicroButton-" .. name .. "-Down.blp")
+        Era(ids[3], "UI-MicroButton-" .. name .. "-Up.blp")
+    end
+    Era(130817, "UI-MicroButtonCharacter-Down.blp")
+    Era(130818, "UI-MicroButtonCharacter-Up.blp")
+    Era(130749, "UI-Button-KeyRing.blp")
+    Era(130747, "UI-Button-KeyRing-Down.blp")
+    Era(130841, "UI-Quickslot2.tga")
+    Era(130829, "UI-Panel-MinimizeButton-Disabled.blp")
+    Era(130830, "UI-Panel-MinimizeButton-Down.blp")
+    Era(130832, "UI-Panel-MinimizeButton-Up.blp")
+    -- Ours is the later input border, not Era's.
+    FILES[130975] = nil
+end
 -- Atlases on a sheet too big to copy whole, a small copy per piece: lower-case atlas -> copy, tiled across. The game
 -- menu's red buttons: each copy the extent of the game's own piece, so the crop the game gives a cap (by that extent,
 -- ThreeSliceButtonMixin.UpdateScale, after any swap of ours) lands on the copy as it would on the atlas.
@@ -61,9 +92,39 @@ for state, suffix in pairs({ [""] = "", ["-pressed"] = "-Pressed", ["-disabled"]
     PACKED["128-redbutton-right" .. state] = { "RedButtonRight" .. suffix .. ".tga" }
     PACKED["_128-redbutton-center" .. state] = { "RedButtonMid" .. suffix .. ".tga", true }
 end
+-- Era's classic page arrows: the 1.x files cropped to the atlas piece (21 x 19 at 5, 6 of 32).
+if ns.OnEra() then
+    local ARROW_CROP = { 5 / 32, 26 / 32, 6 / 32, 25 / 32 }
+    for _, way in ipairs({ "Up", "Down" }) do
+        for state, suffix in pairs({ up = "Up", down = "Down", disabled = "Disabled" }) do
+            PACKED["hud-mainmenubar-arrow" .. way:lower() .. "-" .. state] =
+                { "UI-MainMenu-Scroll" .. way .. "Button-" .. suffix .. ".blp", crop = ARROW_CROP, era = true }
+        end
+    end
+end
 local clientWas = setmetatable({}, { __mode = "k" })
 B.clientWas = clientWas
 local IsSecret = ns.IsSecret
+
+local packedOf = {}   -- atlas as the client names it -> its packed copy or false
+local function Packed(atlas)
+    local known = packedOf[atlas]
+    if known == nil then
+        known = PACKED[atlas:lower()] or false
+        packedOf[atlas] = known
+    end
+    return known
+end
+-- One of Era's pieces the broad walk hands to its copy.
+function B.ClientCopyOf(region, atlas)
+    if atlas then
+        if IsSecret(atlas) then return false end
+        local packed = Packed(atlas)
+        return packed ~= false and packed.era == true
+    end
+    local file = region:GetTexture()
+    return type(file) == "number" and ERA_FILES[file] == true
+end
 
 -- Atlas info is static and GetAtlasInfo builds a table per call: per atlas, its info if its sheet has a copy, else false.
 local atlasCopy = {}
@@ -95,8 +156,10 @@ local function SwapPacked(texture, was, atlas, packed)
     local copy = BronzeCopy(packed[1])
     local across = packed[2] == true
     local wrap = across and "REPEAT" or "CLAMP"
-    -- The crop is left as the game set it: it counts within the piece, as the copy is.
+    -- The game's crop counts within the piece, as the copy does; a cropped copy sets its own.
     if copy and texture:SetTexture(copy, wrap, "CLAMP") ~= false then
+        local crop = packed.crop
+        if crop then texture:SetTexCoord(crop[1], crop[2], crop[3], crop[4]) end
         if texture.SetHorizTile then texture:SetHorizTile(across) end
         Remember(texture, was, atlas, nil)
         ns.UntintGameArt(texture)
@@ -110,6 +173,13 @@ end
 local themeOn = false
 -- Our own pieces on the game's atlases (the inset border): on the theme's copies as the game's are, across every turn.
 local ours = setmetatable({}, { __mode = "k" })
+
+-- The client put copyless art on a piece of ours: never put back.
+local function Drop(texture, was)
+    if not was then return end
+    clientWas[texture] = nil
+    ns.PaintCopy(texture, nil)
+end
 
 local function BronzeClient(texture, off)
     if not texture or not texture.GetAtlas then return end
@@ -138,7 +208,7 @@ local function BronzeClient(texture, off)
     -- A secret atlas is never a key: asked each time.
     local secret = atlas and IsSecret(atlas)
     if atlas and not secret and judged[texture] == atlas then return end
-    local packed = atlas and not secret and atlas:find("128%-[Rr]ed[Bb]utton") and PACKED[atlas:lower()]
+    local packed = atlas and not secret and Packed(atlas)
     if packed then
         SwapPacked(texture, was, atlas, packed)
         return
@@ -148,6 +218,7 @@ local function BronzeClient(texture, off)
         if secret then info = AskCopy(atlas) else info = CopyInfo(atlas) end
         if not info then
             if not secret then judged[texture] = atlas end
+            Drop(texture, was)
             return
         end
         -- Only if the copy loads (a failed load draws nothing); tiled strips stay tiled.
@@ -175,6 +246,8 @@ local function BronzeClient(texture, off)
         else
             texture:SetTexture(file)
         end
+    else
+        Drop(texture, was)
     end
 end
 

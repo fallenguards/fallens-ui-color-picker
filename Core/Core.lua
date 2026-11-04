@@ -32,10 +32,15 @@ function ns.Persist(line)
     if ns.debugSink then ns.debugSink(line) end
 end
 
--- Forever has a 16xxx toc, retail 120xxx; branch on this, never on whether a function exists.
-function ns.OnForever()
-    local _, _, _, toc = GetBuildInfo()
-    return type(toc) == "number" and toc >= 16000 and toc < 17000
+-- Forever has a 16xxx toc, Classic Era 11xxx, retail 120xxx; branch on this, never on whether a function exists.
+local _, _, _, TOC = GetBuildInfo()
+TOC = type(TOC) == "number" and TOC or 0
+function ns.OnForever() return TOC >= 16000 and TOC < 17000 end
+function ns.OnEra() return TOC >= 11000 and TOC < 12000 end
+
+-- Hands ns to the dev addon; nothing else calls it.
+function FallensUIColorPicker_AttachDevTools(fn)
+    fn(ns)
 end
 
 function ns.Print(msg)

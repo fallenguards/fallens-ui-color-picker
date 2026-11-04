@@ -53,7 +53,7 @@ end
 
 -- The band's frames; Textured color's Bar art part reads them too (Art/ThemeFlat.lua).
 ns.BAR_ROOTS = { "FallensUIColorPickerBar", "FallensUIColorPickerMicroGroup", "FallensUIColorPickerBagsExtra", "MainActionBar",
-    "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft", "MultiBar5", "MultiBar6", "MultiBar7",
+    "MainMenuBar", "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft", "MultiBar5", "MultiBar6", "MultiBar7",
     "StanceBar", "PetActionBar", "PossessActionBar", "BagsBar", "MicroMenuContainer", "StatusTrackingBarManager" }
 local OTHER = "themePartWindows"
 -- A bag bar button's picture (Forever's backpack and key ring, the bags, the reagent bag): Bag icons, apart from its

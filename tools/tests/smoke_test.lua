@@ -1,9 +1,11 @@
 -- Loads an addon's toc files against a stubbed game, then runs ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD and
--- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name> [inert|old]
--- inert: the full ClassicUI Forever enabled; old: settings saved by the build made from ClassicUI Forever.
+-- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name> [inert|old|era]
+-- inert: the full ClassicUI Forever enabled; old: settings saved by the build made from ClassicUI Forever; era: the
+-- Classic Era client.
 -- luacheck: std lua54
 -- luacheck: ignore 111 112 113 121 122 212
 local dir, tocName, addon, inert, old = arg[1], arg[2], arg[3], arg[4] == "inert", arg[4] == "old"
+local era = arg[4] == "era"
 
 local Stub
 local stubMeta = {}
@@ -66,7 +68,10 @@ end })
 _G.CreateFrame = NewFrame
 _G.GetLocale = function() return "enUS" end
 _G.GetTime = function() return 100 end
-_G.GetBuildInfo = function() return "12.1.5", "70575", "", 120105 end
+_G.GetBuildInfo = function()
+    if era then return "1.15.9", "70576", "", 11509 end
+    return "12.1.5", "70575", "", 120105
+end
 _G.InCombatLockdown = function() return false end
 _G.issecretvalue = function() return false end
 _G.issecurevariable = function() return true end

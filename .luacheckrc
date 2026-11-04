@@ -10,6 +10,7 @@ ignore = {
 globals = {
     "FallensUIColorPickerDB",
     "FallensUIColorPicker_OnAddonCompartmentClick",
+    "FallensUIColorPicker_AttachDevTools",
     "SlashCmdList",
     "SLASH_FALLENSUICOLORPICKER1",
     "SLASH_FALLENSUICOLORPICKER2",

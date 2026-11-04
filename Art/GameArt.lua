@@ -22,7 +22,7 @@ local METAL = {
     "^ui%-hud%-unitframe%-target%-portraiton%-boss%-gold", "^ui%-hud%-unitframe%-target%-portraiton%-boss%-rare%-silver",
     "^ui%-hud%-actionbar%-iconframe$", "^ui%-hud%-actionbar%-iconframe%-border$", "^ui%-hud%-actionbar%-iconframe%-small$",
     "^ui%-hud%-actionbar%-iconframe%-bags$", "^ui%-hud%-actionbar%-iconframe%-slot", "^ui%-hud%-actionbar%-iconframe%-down$",
-    "^ui%-hud%-actionbar%-frame", "^ui%-hud%-actionbar%-page%a+arrow%-", "^ui%-hud%-actionbar%-flyout$", "^bag%-arrow",
+    "^ui%-hud%-actionbar%-frame", "^ui%-hud%-actionbar%-flyout$", "^bag%-arrow",
     "^ui%-hud%-actionbar%-iconframe%-addrow", "^ui%-hud%-actionbar%-gryphon", "^ui%-hud%-actionbar%-wyvern",
     "^minimal%-scrollbar%-track", "^minimal%-scrollbar%-small%-thumb", "^minimal%-scrollbar%-thumb", "^minimal%-scrollbar%-arrow",
     "^ui%-character%-info%-line%-bounce", "^ui%-character%-info%-itemlevel%-bounce",
@@ -44,9 +44,11 @@ local METAL = {
 -- Light, not metal: a state's hover or glow over the art.
 local NOT_METAL = { "mouseover", "highlight", "glow", "hover", "mask", "shadow" }
 -- The old art by file: the calendar's frame, button borders and divider, the skill line tabs; the column tabs and the
--- rock and marble behind lists (the guild roster's header strip); the communities chat box's border.
+-- rock and marble behind lists (the guild roster's header strip); the communities chat box's border; the dialog border
+-- (square corners, not icons); Era's ammo socket and frame sheet (portrait ring, corners).
 local METAL_FILES = { [235431] = true, [235430] = true, [235418] = true, [131074] = true, [136831] = true,
-    [131139] = true, [374155] = true, [374154] = true, [375507] = true, [375508] = true, [389190] = true }
+    [131139] = true, [374155] = true, [374154] = true, [375507] = true, [375508] = true, [389190] = true,
+    [131072] = true, [136545] = true, [374156] = true }
 
 local metalAtlas = {}   -- atlas -> metal or not, worked out once
 local function IsMetal(atlas)
@@ -95,10 +97,11 @@ local TIP_PANE = { pane = true, tip = true }
 -- Pictures and light by their own names (the Adventure Guide's raid buttons: bgImage).
 local KEEP_NAMES = { "icon", "portrait", "cooldown", "flash", "glow", "highlight", "model", "image", "splash", "preview",
     "thumbnail", "illustration", "picture" }
--- The curated metal list (METAL) wins over these.
+-- The curated metal list (METAL) wins over these. The latency light and the page arrows keep their colors.
 local KEEP_ATLAS = { "icon", "portrait", "mask", "glow", "highlight", "shadow", "sheen", "shine", "flash", "spark",
     "particle", "animation", "swirl", "^talents%-background", "^talents%-node", "^spec%-", "poi", "waypoint",
-    "warmode%-swords", "splash", "preview", "thumbnail", "illustration", "tutorial", "loadingscreen", "^ui%-ej%-" }
+    "warmode%-swords", "splash", "preview", "thumbnail", "illustration", "tutorial", "loadingscreen", "^ui%-ej%-",
+    "performancebar", "^ui%-hud%-actionbar%-page%a+arrow%-", "^hud%-mainmenubar%-arrow" }
 -- Panes by atlas, and the plain parchment by name or file (the spellbook's, the professions book's page). The quest
 -- log's campaign headers (campaign_sky) and a quest's campaign parchment (questbg-) are parchment too.
 local PANE_ATLAS = { "background", "parchment", "paper", "%-bg$", "%-bg%-", "center$", "%-fill", "^campaign", "^questbg" }
@@ -201,26 +204,24 @@ local function SplitBackpack(region)
     want[pieces[1]], want[pieces[2]] = true, true
 end
 
-local function BroadMatch(region, atlas)
+local ERA = ns.OnEra()
+-- How the broad walk takes a texture: "skip" (another paint holds it), "copy" (Era's copy layers), "backpack",
+-- "frame", "pane", "tip" (a tooltip's center), "keep", or nil (no file to judge).
+local function Judge(region, atlas)
     local B = ns.bronze
-    if B.tinted[region] or B.swapped[region] or B.clientWas[region] then return end
+    if B.tinted[region] or B.swapped[region] or B.clientWas[region] then return "skip" end
+    -- Era's pictures drawn into their frame: our copies under the metal masks.
+    if ERA and B.ClientCopyOf(region, atlas) then return "copy" end
     -- The micro menu's character button wears the player's portrait as its icon: in the theme as the other icons are.
-    if region:GetParent() == _G.CharacterMicroButton and not region:IsObjectType("MaskTexture") then
-        want[region] = true
-        return
+    if not ERA and region:GetParent() == _G.CharacterMicroButton and not region:IsObjectType("MaskTexture") then
+        return "frame"
     end
     -- A bag's picture: in the theme with Bag icons, never kept as a picture.
     local name = region:GetName()
-    if type(name) == "string" and not ns.IsSecret(name) and Listed(ns.BAG_ICONS, name) then
-        want[region] = true
-        return
-    end
-    if atlas == "bag-main" then return SplitBackpack(region) end
+    if type(name) == "string" and not ns.IsSecret(name) and Listed(ns.BAG_ICONS, name) then return "frame" end
+    if atlas == "bag-main" then return "backpack" end
     local key = region.GetParentKey and region:GetParentKey()
-    if type(key) == "string" and not ns.IsSecret(key) and LATE_PANES[key] then
-        want[region] = PANE
-        return
-    end
+    if type(key) == "string" and not ns.IsSecret(key) and LATE_PANES[key] then return "pane" end
     local kind
     if atlas then
         kind = AtlasKind(atlas)
@@ -228,11 +229,13 @@ local function BroadMatch(region, atlas)
     else
         -- A colour texture has no file; our own art goes by its path.
         local file = region:GetTexture()
-        if ns.IsSecret(file) or type(file) ~= "number" then return end
+        if ns.IsSecret(file) or type(file) ~= "number" then return nil end
         local w, h = region:GetWidth(), region:GetHeight()
-        if ns.IsSecret(w) or ns.IsSecret(h) then return end
+        if ns.IsSecret(w) or ns.IsSecret(h) then return nil end
         if METAL_FILES[file] then
-            kind = "frame"
+            -- Whatever its name says (the portrait ring is PortraitFrame); light stays light.
+            local blend = region:GetBlendMode()
+            return (not ns.IsSecret(blend) and blend == "BLEND") and "frame" or "keep"
         elseif PANE_FILES[file] then
             kind = "pane"
         elseif IconLike(region, w, h) then
@@ -241,12 +244,26 @@ local function BroadMatch(region, atlas)
             kind = (w > PANE_W and h > PANE_H) and "pane" or "frame"
         end
     end
-    if kind == "keep" or Kept(region) then return end
-    if kind == "pane" and atlas and atlas:lower():find("^tooltip%-nineslice%-center") then
+    if kind == "keep" or Kept(region) then return "keep" end
+    if kind == "pane" and atlas and atlas:lower():find("^tooltip%-nineslice%-center") then return "tip" end
+    return kind
+end
+-- Read by the dev addon's hover probe.
+ns.GameArtJudge = Judge
+
+local function BroadMatch(region, atlas)
+    local verdict = Judge(region, atlas)
+    if verdict == "copy" then
+        ns.ThemeClientArt(region)
+    elseif verdict == "backpack" then
+        SplitBackpack(region)
+    elseif verdict == "frame" then
+        want[region] = true
+    elseif verdict == "pane" then
+        want[region] = PANE
+    elseif verdict == "tip" then
         want[region] = TIP_PANE
-        return
     end
-    want[region] = kind == "pane" and PANE or true
 end
 
 -- A nameplate's art can come back secret: never a table key.

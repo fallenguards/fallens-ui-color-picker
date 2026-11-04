@@ -48,11 +48,13 @@ jobs:
       - uses: leafo/gh-actions-lua@v10
         with:
           luaVersion: '5.4'
-      - name: Load the addon (normal, ClassicUI Forever enabled, settings from the earlier build)
+      - name: Load the addon (normal, ClassicUI Forever enabled, settings from the earlier build, Classic Era)
         run: |
           status=0
-          for mode in normal inert old; do
+          for mode in normal inert old era; do
             echo "== $mode"
             lua tools/tests/smoke_test.lua . FallensUIColorPicker.toc FallensUIColorPicker "$mode" || status=1
           done
           exit $status
+      - name: Era's broad copies are frames, never backgrounds
+        run: lua tools/tests/era_copies_test.lua .
