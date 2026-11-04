@@ -203,8 +203,9 @@ local function Content()
         need = math.max(need, Inline(host, Group("themeIgnoreEliteFrames"), cw + GAP, y))
         y = y - CHECK_H
     end
-    for _, key in ipairs({ "themeIgnorePlateDragon", "minimapButton" }) do
-        if byKey[key] then
+    for _, key in ipairs({ "themeIgnorePlateDragon", "minimapButton", "foreverWelcome" }) do
+        local entry = byKey[key]
+        if entry and not (entry.hideIf and entry.hideIf()) then
             local check, cw = Check(host, byKey[key])
             check:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
             need, y = math.max(need, cw), y - CHECK_H

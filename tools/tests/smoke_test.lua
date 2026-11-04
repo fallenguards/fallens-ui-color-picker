@@ -1,11 +1,11 @@
 -- Loads an addon's toc files against a stubbed game, then runs ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD and
--- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name> [inert|old|era]
+-- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name> [inert|old|era|forever]
 -- inert: the full ClassicUI Forever enabled; old: settings saved by the build made from ClassicUI Forever; era: the
--- Classic Era client.
+-- Classic Era client; forever: WoW Forever, its login timers run once (the welcome line).
 -- luacheck: std lua54
 -- luacheck: ignore 111 112 113 121 122 212
 local dir, tocName, addon, inert, old = arg[1], arg[2], arg[3], arg[4] == "inert", arg[4] == "old"
-local era = arg[4] == "era"
+local era, forever = arg[4] == "era", arg[4] == "forever"
 
 local Stub
 local stubMeta = {}
@@ -74,6 +74,7 @@ _G.GetLocale = function() return "enUS" end
 _G.GetTime = function() return 100 end
 _G.GetBuildInfo = function()
     if era then return "1.15.9", "70576", "", 11509 end
+    if forever then return "1.60.1", "70790", "", 16001 end
     return "12.1.5", "70575", "", 120105
 end
 _G.InCombatLockdown = function() return false end
@@ -84,7 +85,13 @@ _G.hooksecurefunc = function() end
 local reported = {}
 _G.geterrorhandler = function() return function(e) reported[#reported + 1] = tostring(e) end end
 _G.wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
-_G.C_Timer = { After = function(_, fn) end, NewTicker = function() return Stub() end, NewTimer = function() return Stub() end }
+-- Timers wait here; the forever run fires the login ones once, after the events.
+local timers = {}
+_G.C_Timer = { After = function(_, fn) timers[#timers + 1] = fn end, NewTicker = function() return Stub() end,
+    NewTimer = function() return Stub() end }
+-- Chat lines, read back by the welcome checks.
+local printed = {}
+_G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, line) printed[#printed + 1] = tostring(line) end }
 -- The game keys a character by GUID: ClassicUI Forever is on for other characters always, for this one when inert.
 local ME = "Player-1-0000000A"
 _G.UnitGUID = function(unit) return unit == "player" and ME or nil end
@@ -185,6 +192,24 @@ if not ns.INERT then
     print("theme on (Dark) " .. (ok and "ran" or ("ERROR " .. tostring(err))))
     ok, err = pcall(ns.ToggleChanged, "themePartTooltips")
     print("part toggle " .. (ok and "ran" or ("ERROR " .. tostring(err))))
+end
+-- The Forever welcome: on Forever a line with both its links, nowhere else.
+local function Welcomed()
+    for _, line in ipairs(printed) do
+        if line:find("|Hfcp:issues|h", 1, true) and line:find("|Hfcp:hidewelcome|h", 1, true) then return true end
+    end
+    return false
+end
+if not ns.INERT and (forever or era) then
+    local queued = timers
+    timers = {}
+    for _, fn in ipairs(queued) do
+        local ok, err = pcall(fn)
+        if not ok then reported[#reported + 1] = "timer: " .. tostring(err) end
+    end
+    local want = forever
+    print((Welcomed() == want and "PASS" or "FAIL") .. " Forever welcome " .. (want and "shown" or "not shown"))
+    if Welcomed() ~= want then os.exit(1) end
 end
 if #reported > 0 then
     for _, e in ipairs(reported) do print("REPORTED " .. e) end

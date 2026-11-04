@@ -294,8 +294,75 @@ function ns.OnEditMode(fn)
     return true
 end
 
--- A first login: where the settings are, and the look pick.
+-- The bug report page in a copy box (the game opens no browser), read-only.
+local ISSUES_URL = "https://github.com/fallenguards/fallens-ui-color-picker/issues"
+local function PopupBox(dialog)
+    return dialog.EditBox or dialog.editBox or (dialog.GetName and dialog:GetName() and _G[dialog:GetName() .. "EditBox"])
+end
+StaticPopupDialogs.FALLENSUICOLORPICKER_COPY_LINK = {
+    text = L["WELCOME_COPY_PROMPT"],
+    button1 = CLOSE or "Close",
+    hasEditBox = 1,
+    editBoxWidth = 360,
+    OnShow = function(self, data)
+        local box = PopupBox(self)
+        if not box then return end
+        box:SetText(data or "")
+        box:HighlightText()
+        box:SetFocus()
+    end,
+    EditBoxOnTextChanged = function(self, data)
+        if self:GetText() ~= (data or "") then
+            self:SetText(data or "")
+            self:HighlightText()
+        end
+    end,
+    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+    EditBoxOnEnterPressed = function(self) self:GetParent():Hide() end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    preferredIndex = 3,
+}
+StaticPopupDialogs.FALLENSUICOLORPICKER_HIDE_FOREVER_WELCOME = {
+    text = L["LAUNCH_HIDE_ASK"],
+    button1 = HIDE or "Hide",
+    button2 = CANCEL or "Cancel",
+    OnAccept = function() ns.db.foreverWelcome = false end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+    preferredIndex = 3,
+}
+
+-- Chat links in the game's link blue; a click runs through SetItemRef, hooked after it, never replaced.
+local function Link(target, label)
+    return "|cff70d6ff|Hfcp:" .. target .. "|h[" .. label .. "]|h|r"
+end
+local function OnItemRef(link)
+    local target = type(link) == "string" and link:match("^fcp:(%w+)")
+    if target == "issues" then
+        StaticPopup_Show("FALLENSUICOLORPICKER_COPY_LINK", L["LAUNCH_ISSUES"]:format(ns.NAME), nil, ISSUES_URL)
+    elseif target == "hidewelcome" then
+        StaticPopup_Show("FALLENSUICOLORPICKER_HIDE_FOREVER_WELCOME", ns.SLASH)
+    end
+end
+local linksHooked = false
+
+-- WoW Forever: every login till turned off, thanks and the bug report link, and a link to hide it.
+local function ForeverWelcome()
+    if not ns.OnForever() or ns.db.foreverWelcome == false then return end
+    if not linksHooked then
+        linksHooked = true
+        hooksecurefunc("SetItemRef", OnItemRef)
+    end
+    ns.Print(L["LAUNCH_THANKS"]:format(ns.NAME, Link("issues", L["WELCOME_HERE"])) .. " "
+        .. Link("hidewelcome", L["LAUNCH_HIDE_LINK"]))
+end
+
+-- Each login: the Forever welcome; a first one, where the settings are and the look pick.
 local function FirstRun()
+    ns.SafeCall(ForeverWelcome)
     if ns.db.welcomed then return end
     ns.db.welcomed = true
     ns.Print(L["PICKER_INTRO"]:format(ns.SLASH))

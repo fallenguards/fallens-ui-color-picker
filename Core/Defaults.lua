@@ -23,6 +23,7 @@ ns.DB_DEFAULTS = {
     themeIgnoreElitePlayer = true, themeIgnoreEliteTarget = true, themeIgnoreEliteFocus = true,
     themeIgnorePlateDragon = false,
     minimapButton = true,
+    foreverWelcome = true,
     minimapButtonAngle = 213,
 }
 

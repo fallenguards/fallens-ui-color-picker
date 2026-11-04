@@ -48,6 +48,7 @@ ns.TOGGLES = {
     { "themeIgnorePlateDragon", L["OPT_themeIgnorePlateDragon"], L["OPT_themeIgnorePlateDragon_TIP"],
         parent = "bronzeTheme" },
     { "minimapButton", L["PICKER_BUTTON"], L["PICKER_BUTTON_TIP"] },
+    { "foreverWelcome", L["OPT_foreverWelcome"], L["OPT_foreverWelcome_TIP"], hideIf = function() return not ns.OnForever() end },
 }
 
 -- Radio rows: key -> its group's keys (Core ToggleChanged keeps exactly one on).

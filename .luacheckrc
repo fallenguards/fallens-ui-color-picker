@@ -30,7 +30,7 @@ read_globals = {
     "ItemTextIsFullPage", "ItemTextPageScrollChild", "ItemTextGetText", "ItemTextGetCreator", "ITEM_TEXT_FROM",
     "date", "GetFlyoutInfo", "GetFlyoutSlotInfo",
     "InputUtil", "GetNumLootItems",
-    "CLOSE", "DONE", "LOCALIZED_CLASS_NAMES_MALE", "UIParent", "Minimap", "MinimapCluster", "GetCursorPosition", "UnitLevel", "UnitEffectiveLevel", "GetCreatureDifficultyColor", "CASTBAR_CLASSIC_YELLOW", "CASTBAR_CLASSIC_GREEN", "CASTBAR_CLASSIC_GRAY", "CASTBAR_CLASSIC_RED", "CreateColor", "GameTooltip", "ColorPickerFrame",
+    "CLOSE", "DONE", "HIDE", "LOCALIZED_CLASS_NAMES_MALE", "UIParent", "Minimap", "MinimapCluster", "GetCursorPosition", "UnitLevel", "UnitEffectiveLevel", "GetCreatureDifficultyColor", "CASTBAR_CLASSIC_YELLOW", "CASTBAR_CLASSIC_GREEN", "CASTBAR_CLASSIC_GRAY", "CASTBAR_CLASSIC_RED", "CreateColor", "GameTooltip", "ColorPickerFrame",
     "hooksecurefunc", "wipe", "geterrorhandler",
     "GetCursorInfo", "ClearCursor", "GetNumMacros", "GetMacroInfo", "DeleteMacro", "PlaceAction", "PickupAction", "GetNumShapeshiftForms", "GetActionInfo", "GetActionTexture", "C_ActionBar",
     "CreateFrame", "C_Timer", "GetBuildInfo", "HasAction",
