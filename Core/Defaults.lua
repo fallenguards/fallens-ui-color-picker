@@ -11,6 +11,7 @@ ns.DB_DEFAULTS = {
     themeCustom = false,
     themeColor = "e69e52",
     themeDarkness = 50,
+    themeBronzeShade = 50,
     themePaneShade = 50,
     themeTextured = false,
     texturedBars = true, texturedCharacter = true, texturedSpellbook = true, texturedWindows = true,

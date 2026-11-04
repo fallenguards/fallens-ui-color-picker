@@ -2,8 +2,8 @@ if select(2, ...).INERT then return end
 local _, ns = ...
 local L = ns.L
 
--- The settings' own controls: the custom color in the game's color picker, and the 0-100 sliders (Dark's darkness,
--- the background shade) in the game's slider with steppers.
+-- The settings' own controls: the custom color in the game's color picker, and the 0-100 sliders (Dark's and Bronze's
+-- darkness, the background shade) in the game's slider with steppers.
 
 local O = ns.options
 
@@ -86,6 +86,12 @@ end
 function O.DarknessRow(parent, width)
     return ThemeSlider(parent, width, { key = "themeDarkness", default = ns.DARKNESS_DEFAULT, set = ns.SetThemeDarkness,
         label = L["OPTWIN_DARKNESS"], tip = L["OPTWIN_DARKNESS_TIP"] })
+end
+
+-- Bronze's, light bronze to black.
+function O.BronzeShadeRow(parent, width)
+    return ThemeSlider(parent, width, { key = "themeBronzeShade", default = ns.DARKNESS_DEFAULT,
+        set = ns.SetThemeBronzeShade, label = L["OPTWIN_DARKNESS"], tip = L["OPTWIN_BRONZE_DARKNESS_TIP"] })
 end
 
 -- Background shade: its name on a line of its own, the slider under it.

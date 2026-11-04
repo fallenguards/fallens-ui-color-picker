@@ -758,8 +758,12 @@ function ns.SetThemePaneShade(level)
     Retint()
 end
 
--- Dark's slider (0-100), saved and painted.
+-- Dark's and Bronze's sliders (0-100), saved and painted.
 function ns.SetThemeDarkness(level)
     ns.db.themeDarkness = math.max(0, math.min(100, math.floor((tonumber(level) or ns.DARKNESS_DEFAULT) + 0.5)))
+    Retint()
+end
+function ns.SetThemeBronzeShade(level)
+    ns.db.themeBronzeShade = math.max(0, math.min(100, math.floor((tonumber(level) or ns.DARKNESS_DEFAULT) + 0.5)))
     Retint()
 end

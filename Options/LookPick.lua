@@ -45,8 +45,8 @@ local function Pick(key)
     SyncAll()
 end
 
--- The four looks from top down at y in host: the game's radios, Dark's slider and the custom color's swatch beside
--- their names. Returns the height and the widest row's need.
+-- The four looks from top down at y in host: the game's radios, Dark's and Bronze's sliders and the custom color's
+-- swatch beside their names. Returns the height and the widest row's need.
 local function LookRows(host, y, prefix)
     local rows, need = {}, 0
     for i, look in ipairs(LOOKS) do
@@ -66,10 +66,14 @@ local function LookRows(host, y, prefix)
         rows[i] = row
         need = math.max(need, 22 + text:GetStringWidth())
     end
-    local dark, custom = rows[2], rows[4]
+    local dark, bronze, custom = rows[2], rows[3], rows[4]
+    -- Both sliders past the wider name, lined up.
+    local sliderX = 22 + math.max(dark.text:GetStringWidth(), bronze.text:GetStringWidth()) + 12
     local darkness = O.DarknessRow(dark, SLIDER_W)
-    darkness:SetPoint("LEFT", dark.text, "RIGHT", 12, 0)
-    need = math.max(need, 22 + dark.text:GetStringWidth() + 12 + SLIDER_W)
+    darkness:SetPoint("LEFT", dark, "LEFT", sliderX, 0)
+    local bronzeShade = O.BronzeShadeRow(bronze, SLIDER_W)
+    bronzeShade:SetPoint("LEFT", bronze, "LEFT", sliderX, 0)
+    need = math.max(need, sliderX + SLIDER_W)
     -- The custom color's swatch: a click picks the look and opens the game's color picker.
     local chip = ns.NewFrame("Button", nil, custom)
     chip:SetSize(18, 18)
@@ -87,8 +91,9 @@ local function LookRows(host, y, prefix)
     syncs[#syncs + 1] = function()
         local now = Current()
         for _, row in ipairs(rows) do row.radio:SetChecked(row.key == now) end
-        -- Dark's slider, the settings' own row: live while Dark is the look, as there.
+        -- Each look's slider: live while it is the look.
         darkness:SetEnabled(now == "themeDark")
+        bronzeShade:SetEnabled(now == "themeBronze")
         local r, g, b = ns.HexColor(ns.db.themeColor)
         swatch:SetColorTexture(r or 1, g or 1, b or 1)
     end

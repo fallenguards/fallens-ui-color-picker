@@ -352,6 +352,21 @@ function ns.DarkGrey(level)
     return DARK_MID * (1 - level) * 2
 end
 
+-- Bronze's slider: its color at 50, lifted as Dark's light grey at 0, black at 100.
+local BRONZE = { 0.9, 0.62, 0.32 }
+local BRONZE_LIFT = (DARK_LIGHT - DARK_MID) / (1 - DARK_MID)
+local function BronzeShade(level, tint)
+    level = math.max(0, math.min(100, tonumber(level) or ns.DARKNESS_DEFAULT)) / 100
+    for i = 1, 3 do
+        local c = BRONZE[i]
+        if level <= 0.5 then
+            tint[i] = c + (1 - c) * BRONZE_LIFT * (1 - level * 2)
+        else
+            tint[i] = c * (1 - level) * 2
+        end
+    end
+end
+
 -- nil while the custom theme is off, else the pick under it.
 local function Name()
     local db = ns.db
@@ -369,6 +384,7 @@ local function Name()
         end
         return "custom"
     end
+    BronzeShade(db.themeBronzeShade, THEMES.bronze.tint)
     return "bronze"
 end
 
