@@ -7,6 +7,16 @@ local _, ns = ...
 local weak = { __mode = "k" }
 local DEPTH = 16
 
+-- A frame by global name, or keys under one ("MainActionBar.ActionBarPageNumber").
+local function Lookup(name)
+    local frame
+    for key in name:gmatch("[^.]+") do
+        if frame then frame = frame[key] else frame = _G[key] end
+        if type(frame) ~= "table" then return nil end
+    end
+    return frame
+end
+
 -- A finder of a piece's part (roots: part -> frame names; names: { pattern, part } families by frame name; other: the
 -- part of anything else; orphan: of a piece hanging from no window, as the game's menus), worked out once a piece and
 -- again after an addon loads (its frames are new).
@@ -27,7 +37,8 @@ function ns.PartFinder(roots, names, other, orphan)
             wipe(parts)
             for part, list in pairs(roots) do
                 for _, name in ipairs(list) do
-                    if _G[name] then rootPart[_G[name]] = part end
+                    local frame = Lookup(name)
+                    if frame then rootPart[frame] = part end
                 end
             end
         end
@@ -82,6 +93,7 @@ local PartOf = ns.PartFinder({
     themePartMinimap = { "MinimapCluster", "Minimap", "QueueStatusButton", "FallensUIColorPickerMinimapBag", "GameTimeFrame",
         "TimeManagerClockButton" },
     themePartBars = ACTION_ROOTS,
+    themePartPageArrows = { "MainActionBar.ActionBarPageNumber" },
     themePartMicroMenu = { "MicroMenuContainer", "FallensUIColorPickerMicroGroup" },
     themePartBagBar = { "BagsBar", "FallensUIColorPickerBagsExtra" },
     themePartXPBars = { "StatusTrackingBarManager", "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer" },
@@ -98,8 +110,8 @@ function ns.ThemePartOf(region) return pinned[region] or PartOf(region) end
 
 -- Each part's row; a theme change repaints on it as on any theme setting.
 local PART_KEYS = { themePartParchment = true, themePartUnits = true, themePartCastBars = true,
-    themePartNameplates = true, themePartMinimap = true, themePartBars = true, themePartMicroMenu = true,
-    themePartBagBar = true, themePartBagIcons = true, themePartXPBars = true, themePartBags = true,
+    themePartNameplates = true, themePartMinimap = true, themePartBars = true, themePartPageArrows = true,
+    themePartMicroMenu = true, themePartBagBar = true, themePartBagIcons = true, themePartXPBars = true, themePartBags = true,
     themePartTooltips = true, themePartMenus = true, themePartChat = true, themePartQuestTracker = true, [OTHER] = true,
     themePartAddons = true }
 

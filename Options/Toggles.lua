@@ -25,6 +25,7 @@ ns.TOGGLES = {
     { "themePartNameplates", L["OPT_themePartNameplates"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartMinimap", L["OPT_themePartMinimap"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartBars", L["OPT_themePartBars"], nil, parent = "bronzeTheme", checks = "themeParts" },
+    { "themePartPageArrows", L["OPT_themePartPageArrows"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartMicroMenu", L["OPT_themePartMicroMenu"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartBagBar", L["OPT_themePartBagBar"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartBagIcons", L["OPT_themePartBagIcons"], nil, parent = "bronzeTheme", checks = "themeParts" },
