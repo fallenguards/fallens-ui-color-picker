@@ -193,6 +193,63 @@ if not ns.INERT then
     ok, err = pcall(ns.ToggleChanged, "themePartTooltips")
     print("part toggle " .. (ok and "ran" or ("ERROR " .. tostring(err))))
 end
+
+-- Window pieces: each kind by its frames' names, its atlas or its button; a slot's rim and the bars' art stay out.
+local function Piece(kind, name, key, parent, atlas)
+    local f = NewFrame(nil, name)
+    rawset(f, "GetParentKey", function() return key end)
+    rawset(f, "GetParent", function() return parent end)
+    rawset(f, "IsObjectType", function(_, t) return t == kind or (t == "Button" and kind == "CheckButton") end)
+    rawset(f, "GetAtlas", function() return atlas end)
+    if kind == "Texture" then rawset(f, "GetChildren", false) end
+    return f
+end
+if not ns.INERT then
+    local host = Piece("Frame", "SmokePieceWindow", nil, _G.UIParent)
+    local function Art(parent, atlas, name) return Piece("Texture", name, nil, parent, atlas) end
+    local scroll = Piece("Frame", nil, "ScrollBar", host)
+    local thumb = Piece("Button", nil, "Thumb", Piece("Frame", nil, "Track", scroll))
+    local dropdown = Piece("Frame", "SmokeOptionsDropDown", nil, host)
+    local menuRow = Piece("Button", "DropDownList1Button1", nil, Piece("Frame", "DropDownList1", nil, host))
+    local slot = Piece("Button", nil, nil, host)
+    rawset(slot, "icon", Art(slot))
+    local pane = Art(host)
+    ns.PinBackground(pane, true)
+    _G.PlayerFrame = Piece("Button", "PlayerFrame", nil, _G.UIParent)
+    Fire("ADDON_LOADED", "SmokePieces")
+    local button = Art(Piece("Button", nil, "CloseButton", host))
+    local cases = {
+        { "scroll bar thumb", Art(thumb), "themePieceScrollBars" },
+        { "scroll bar track by name", Art(host, nil, "SmokeListScrollBarTop"), "themePieceScrollBars" },
+        { "dropdown by name", Art(Piece("Button", "SmokeOptionsDropDownButton", nil, dropdown)), "themePieceDropdowns" },
+        { "dropdown by atlas", Art(Piece("Button", nil, nil, host), "common-dropdown-a-button"), "themePieceDropdowns" },
+        { "menu row", Art(menuRow), "themePieceButtons" },
+        { "tab by name", Art(Piece("Button", "SmokeFrameTab2", nil, host)), "themePieceTabs" },
+        { "tab by atlas", Art(Piece("Button", nil, nil, host), "_UIFrame-ActiveTab-Mid"), "themePieceTabs" },
+        { "close button", button, "themePieceButtons" },
+        { "check box", Art(Piece("CheckButton", nil, nil, host)), "themePieceButtons" },
+        { "slot rim", Art(slot), "themePieceBorders" },
+        { "frame metal", Art(host, "UI-Frame-Metal-EdgeTop"), "themePieceBorders" },
+        { "background", pane, "themePartParchment" },
+    }
+    local failed = 0
+    for _, case in ipairs(cases) do
+        local got = ns.ThemePieceOf(case[2])
+        if got ~= case[3] then
+            failed = failed + 1
+            print("FAIL piece " .. case[1] .. ": " .. tostring(got) .. ", want " .. case[3])
+        end
+    end
+    -- Buttons left out: a window's button as drawn, the unit frame (a button) still in the theme.
+    ns.db.themePieceButtons = false
+    local hud = Art(_G.PlayerFrame)
+    local leftOut = ns.ThemePartOn(button) == false and ns.ThemePartOn(hud) == true and ns.ThemePartOn(pane) == true
+    ns.db.themePieceButtons = true
+    if not leftOut then failed = failed + 1 end
+    print((failed == 0 and "PASS" or "FAIL") .. " window pieces: " .. #cases .. " kinds, Buttons left out "
+        .. (leftOut and "as drawn, bars and backgrounds kept" or "WRONG"))
+    if failed > 0 then os.exit(1) end
+end
 -- The Forever welcome: on Forever a line with both its links, nowhere else.
 local function Welcomed()
     for _, line in ipairs(printed) do

@@ -108,12 +108,97 @@ function ns.PinThemePart(region, part) pinned[region] = part end
 -- Read by the dev addon's theme probes.
 function ns.ThemePartOf(region) return pinned[region] or PartOf(region) end
 
+-- Window pieces (their rows under the parts): a scroll bar's, a dropdown's or a tab's by a name on it or up its frames,
+-- else by its atlas; a button's by the button it sits on (an item or spell slot's rim is border); the rest border.
+-- Backgrounds are pinned by the walks that find them (Parchment's row). The bars, unit frames and minimap are each
+-- one piece: only their part's row turns them.
+local BACKGROUNDS, BORDERS, BUTTONS = "themePartParchment", "themePieceBorders", "themePieceButtons"
+local TABS, SCROLL_BARS, DROPDOWNS = "themePieceTabs", "themePieceScrollBars", "themePieceDropdowns"
+local PIECE_PARTS = { [OTHER] = true, themePartBags = true, themePartChat = true, themePartQuestTracker = true,
+    themePartTooltips = true, themePartMenus = true }
+local LOOK_UP = 3
+local ATLAS_PIECES = { { "scrollbar", SCROLL_BARS }, { "dropdown", DROPDOWNS }, { "^uiframe%-tab", TABS },
+    { "^uiframe%-activetab", TABS }, { "sidetab", TABS }, { "toptab", TABS }, { "^options_tab", TABS },
+    { "^questlog%-tab", TABS }, { "^uitools%-tab", TABS }, { "^transmog%-tab", TABS }, { "^gm%-tab", TABS },
+    { "^garrlanding%-tab", TABS } }
+local SLOT_KEYS = { "icon", "Icon", "IconTexture" }
+
+-- A name or parent key that says the piece (lower case): the menus' lists are no dropdowns.
+local function Said(text)
+    if type(text) ~= "string" or ns.IsSecret(text) then return nil end
+    text = text:lower()
+    if text:find("scrollbar", 1, true) then return SCROLL_BARS end
+    if text:find("dropdown", 1, true) and not text:find("dropdownlist", 1, true) then return DROPDOWNS end
+    if text:find("tab%d*$") or text:find("tabbutton%d*$") then return TABS end
+end
+
+local function NamedPiece(obj)
+    return Said(obj:GetName()) or Said(obj.GetParentKey and obj:GetParentKey())
+end
+
+local atlasPiece = {}   -- atlas -> its piece or false, worked out once
+local function AtlasPiece(atlas)
+    local known = atlasPiece[atlas]
+    if known ~= nil then return known end
+    local name = atlas:lower():gsub("^[_!]+", "")
+    known = false
+    for _, entry in ipairs(ATLAS_PIECES) do
+        if name:find(entry[1]) then
+            known = entry[2]
+            break
+        end
+    end
+    atlasPiece[atlas] = known
+    return known
+end
+
+local function Slot(button)
+    for _, key in ipairs(SLOT_KEYS) do
+        local icon = rawget(button, key)
+        if type(icon) == "table" and icon.IsObjectType and icon:IsObjectType("Texture") then return true end
+    end
+    local name = button:GetName()
+    return type(name) == "string" and not ns.IsSecret(name) and _G[name .. "IconTexture"] ~= nil
+end
+
+local function JudgePiece(region)
+    if ns.IsForbidden(region) then return BORDERS end
+    local piece = NamedPiece(region)
+    local owner = region.GetChildren and region or region:GetParent()
+    local frame = owner
+    for _ = 0, LOOK_UP do
+        if piece or not frame or frame == UIParent or ns.IsForbidden(frame) then break end
+        piece = NamedPiece(frame)
+        frame = frame:GetParent()
+    end
+    if piece then return piece end
+    local atlas = region.GetAtlas and region:GetAtlas()
+    if type(atlas) == "string" and not ns.IsSecret(atlas) then
+        piece = AtlasPiece(atlas)
+        if piece then return piece end
+    end
+    if owner and not ns.IsForbidden(owner) and owner:IsObjectType("Button") and not Slot(owner) then return BUTTONS end
+    return BORDERS
+end
+
+-- Worked out once a piece, its atlas as it first came (the theme's copies put files in their place).
+local pieceOf, pinnedPiece = setmetatable({}, weak), setmetatable({}, weak)
+function ns.PinBackground(region, on) pinnedPiece[region] = on and BACKGROUNDS or nil end
+-- Read by the dev addon's theme probes.
+function ns.ThemePieceOf(region)
+    local piece = pinnedPiece[region] or pieceOf[region]
+    if piece then return piece end
+    piece = JudgePiece(region)
+    pieceOf[region] = piece
+    return piece
+end
+
 -- Each part's row; a theme change repaints on it as on any theme setting.
 local PART_KEYS = { themePartParchment = true, themePartUnits = true, themePartCastBars = true,
     themePartNameplates = true, themePartMinimap = true, themePartBars = true, themePartPageArrows = true,
     themePartMicroMenu = true, themePartBagBar = true, themePartBagIcons = true, themePartXPBars = true, themePartBags = true,
     themePartTooltips = true, themePartMenus = true, themePartChat = true, themePartQuestTracker = true, [OTHER] = true,
-    themePartAddons = true }
+    themePartAddons = true, [BORDERS] = true, [BUTTONS] = true, [TABS] = true, [SCROLL_BARS] = true, [DROPDOWNS] = true }
 
 -- Other addons: their frames on the game's windows, walked only while it is checked (off by default), each piece the
 -- walks paint marked so leaving it out hands them back.
@@ -147,7 +232,9 @@ function ns.ThemePartOn(where)
     if not db or where == nil then return true end
     if type(where) == "string" then return db[where] ~= false end
     if addonPieces[where] and db.themePartAddons ~= true then return false end
-    return db[ns.ThemePartOf(where)] ~= false
+    local part = ns.ThemePartOf(where)
+    if db[part] == false then return false end
+    return not PIECE_PARTS[part] or db[ns.ThemePieceOf(where)] ~= false
 end
 
 -- The theme on for this piece, or nil: none picked, or its part left out. No piece: the theme on at all.

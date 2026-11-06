@@ -259,10 +259,13 @@ local function BroadMatch(region, atlas)
         SplitBackpack(region)
     elseif verdict == "frame" then
         want[region] = true
+        ns.PinBackground(region, false)
     elseif verdict == "pane" then
         want[region] = PANE
+        ns.PinBackground(region, true)
     elseif verdict == "tip" then
         want[region] = TIP_PANE
+        ns.PinBackground(region, true)
     end
 end
 

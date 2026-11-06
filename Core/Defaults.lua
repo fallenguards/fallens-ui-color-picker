@@ -19,6 +19,8 @@ ns.DB_DEFAULTS = {
     themePartTooltips = true, themePartChat = true, themePartWindows = true, themePartCastBars = true,
     themePartNameplates = true, themePartPageArrows = true, themePartMicroMenu = true, themePartBagBar = true,
     themePartXPBars = true, themePartMenus = true, themePartQuestTracker = true, themePartBagIcons = false, themePartAddons = false,
+    themePieceBorders = true, themePieceButtons = true, themePieceTabs = true, themePieceScrollBars = true,
+    themePieceDropdowns = true,
     themeIgnoreElite = false,
     themeIgnoreElitePlayer = true, themeIgnoreEliteTarget = true, themeIgnoreEliteFocus = true,
     themeIgnorePlateDragon = false,

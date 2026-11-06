@@ -161,8 +161,12 @@ local function Heading(host, text, y)
     return head:GetStringHeight()
 end
 
--- The settings, top down: the looks, Textured color and its parts, the themed parts in columns, the background shade,
--- the elite and nameplate dragons, the minimap button. Built once, shown in our window or the game's AddOns list.
+local COLS = 3
+local GRIDS = { { "themeParts", "OPT_DROP_THEMED" }, { "themePieces", "OPT_DROP_PIECES" } }
+
+-- The settings, top down: the looks, Textured color and its parts, the themed parts and window pieces in columns, the
+-- background shade, the elite and nameplate dragons, the minimap button and Forever welcome on one line. Built once,
+-- shown in our window or the game's AddOns list (its canvas is about 600 high).
 local function Content()
     byKey = {}
     for _, entry in ipairs(ns.TOGGLES) do byKey[entry[1]] = entry end
@@ -177,19 +181,25 @@ local function Content()
         need = math.max(need, Inline(host, Group("texturedParts"), 24, y))
         y = y - CHECK_H - GAP
     end
-    y = y - Heading(host, L["OPT_DROP_THEMED"], y) - 6
-    local parts, partW, made = Group("themeParts"), 0, {}
-    for i, entry in ipairs(parts) do
-        local check, cw = Check(host, entry)
-        made[i], partW = check, math.max(partW, cw)
+    -- The parts, then the window pieces, in columns as wide as the widest check of both.
+    local grids, colW = {}, 0
+    for i, grid in ipairs(GRIDS) do
+        local made = {}
+        for j, entry in ipairs(Group(grid[1])) do
+            local check, cw = Check(host, entry)
+            made[j], colW = check, math.max(colW, cw)
+        end
+        grids[i] = made
     end
-    local cols = 3
-    for i, check in ipairs(made) do
-        local col, line = (i - 1) % cols, math.floor((i - 1) / cols)
-        check:SetPoint("TOPLEFT", host, "TOPLEFT", col * (partW + GAP), y - line * CHECK_H)
+    need = math.max(need, COLS * (colW + GAP))
+    for i, made in ipairs(grids) do
+        y = y - Heading(host, L[GRIDS[i][2]], y) - 6
+        for j, check in ipairs(made) do
+            local col, line = (j - 1) % COLS, math.floor((j - 1) / COLS)
+            check:SetPoint("TOPLEFT", host, "TOPLEFT", col * (colW + GAP), y - line * CHECK_H)
+        end
+        y = y - math.ceil(#made / COLS) * CHECK_H - GAP
     end
-    need = math.max(need, cols * (partW + GAP))
-    y = y - math.ceil(#made / cols) * CHECK_H - GAP
     do
         local head, row = O.PaneRow(host, SLIDER_W + 140)
         head:SetPoint("TOPLEFT", host, "TOPLEFT", -4, y)
@@ -203,14 +213,17 @@ local function Content()
         need = math.max(need, Inline(host, Group("themeIgnoreEliteFrames"), cw + GAP, y))
         y = y - CHECK_H
     end
-    for _, key in ipairs({ "themeIgnorePlateDragon", "minimapButton", "foreverWelcome" }) do
-        local entry = byKey[key]
-        if entry and not (entry.hideIf and entry.hideIf()) then
-            local check, cw = Check(host, byKey[key])
-            check:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
-            need, y = math.max(need, cw), y - CHECK_H
-        end
+    if byKey.themeIgnorePlateDragon then
+        local check, cw = Check(host, byKey.themeIgnorePlateDragon)
+        check:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
+        need, y = math.max(need, cw), y - CHECK_H
     end
+    local last = {}
+    for _, key in ipairs({ "minimapButton", "foreverWelcome" }) do
+        local entry = byKey[key]
+        if entry and not (entry.hideIf and entry.hideIf()) then last[#last + 1] = entry end
+    end
+    need, y = math.max(need, Inline(host, last, 0, y)), y - CHECK_H
     host:SetSize(need, -y)
     return host
 end

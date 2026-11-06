@@ -554,6 +554,7 @@ end
 local pages = setmetatable({}, weak)   -- piece -> its base color, or true
 function ns.InkPage(piece, base)
     pages[piece] = base or pages[piece] or true
+    ns.PinBackground(piece, true)
     local theme = ParchOn() and ns.ThemeFor(piece)
     if theme then
         Ink(piece, theme)
