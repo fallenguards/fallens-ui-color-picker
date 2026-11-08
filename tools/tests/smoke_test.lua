@@ -250,6 +250,16 @@ if not ns.INERT then
         .. (leftOut and "as drawn, bars and backgrounds kept" or "WRONG"))
     if failed > 0 then os.exit(1) end
 end
+-- A frame the client refuses addon code while saying it is not forbidden (the target's aura buttons): its name
+-- read errors, so the walks leave it alone; a plain frame and an object with no name are walked.
+if ns.IsForbidden then
+    local refusing = NewFrame(nil, nil)
+    rawset(refusing, "GetName", function() error("Attempt to access forbidden object from code tainted by an AddOn") end)
+    local ok = ns.IsForbidden(refusing) == true and ns.IsForbidden(NewFrame(nil, "PlainFrame")) == false
+        and ns.IsForbidden({}) == false and ns.IsForbidden(nil) == true
+    print((ok and "PASS" or "FAIL") .. " forbidden: a frame refusing its name is left alone")
+    if not ok then os.exit(1) end
+end
 -- The Forever welcome: on Forever a line with both its links, nowhere else.
 local function Welcomed()
     for _, line in ipairs(printed) do
