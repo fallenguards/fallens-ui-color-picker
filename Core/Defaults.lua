@@ -16,7 +16,7 @@ ns.DB_DEFAULTS = {
     themeTextured = false,
     texturedBars = true, texturedCharacter = true, texturedSpellbook = true, texturedWindows = true,
     themePartParchment = true, themePartUnits = true, themePartMinimap = true, themePartBars = true, themePartBags = true,
-    themePartTooltips = true, themePartChat = true, themePartWindows = true, themePartCastBars = true,
+    themePartTooltips = true, themePartChat = false, themePartWindows = true, themePartCastBars = true,
     themePartNameplates = true, themePartPageArrows = true, themePartMicroMenu = true, themePartBagBar = true,
     themePartXPBars = true, themePartMenus = true, themePartQuestTracker = true, themePartBagIcons = false, themePartAddons = false,
     themePieceBorders = true, themePieceButtons = true, themePieceTabs = true, themePieceScrollBars = true,
