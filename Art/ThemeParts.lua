@@ -105,8 +105,31 @@ local PartOf = ns.PartFinder({
 -- A piece of ours in another part than where it hangs (the backpack's bag picture, Bag icons on its button).
 local pinned = setmetatable({}, weak)
 function ns.PinThemePart(region, part) pinned[region] = part end
+
+-- A bag bar button's picture that is slot art, not a bag's icon: the key ring's, and an empty slot's (the socket
+-- shows through the icon texture). Bag slots, where a bag's own icon is Bag icons.
+local BAG_SLOT_INDEX = { ["^CharacterBag(%d)SlotIconTexture$"] = 1, ["^CharacterReagentBag(%d)SlotIconTexture$"] = 5 }
+local function SlotArt(region)
+    local name = region.GetName and region:GetName()
+    if type(name) ~= "string" or ns.IsSecret(name) then return false end
+    if name == "KeyRingButtonIconTexture" then return true end
+    for pattern, first in pairs(BAG_SLOT_INDEX) do
+        local n = name:match(pattern)
+        if n then
+            local toInventory = C_Container and C_Container.ContainerIDToInventoryID
+            if not (toInventory and GetInventoryItemID) then return false end
+            return GetInventoryItemID("player", toInventory(first + tonumber(n))) == nil
+        end
+    end
+    return false
+end
+
 -- Read by the dev addon's theme probes.
-function ns.ThemePartOf(region) return pinned[region] or PartOf(region) end
+function ns.ThemePartOf(region)
+    local part = pinned[region] or PartOf(region)
+    if part == "themePartBagIcons" and SlotArt(region) then return "themePartBagSlots" end
+    return part
+end
 
 -- Window pieces (their rows under the parts): a scroll bar's, a dropdown's or a tab's by a name on it or up its frames,
 -- else by its atlas; a button's by the button it sits on (an item or spell slot's rim is border); the rest border.
@@ -196,7 +219,8 @@ end
 -- Each part's row; a theme change repaints on it as on any theme setting.
 local PART_KEYS = { themePartParchment = true, themePartUnits = true, themePartCastBars = true,
     themePartNameplates = true, themePartMinimap = true, themePartBars = true, themePartPageArrows = true,
-    themePartMicroMenu = true, themePartBagBar = true, themePartBagIcons = true, themePartXPBars = true, themePartBags = true,
+    themePartMicroMenu = true, themePartBagBar = true, themePartBagSlots = true, themePartBagIcons = true,
+    themePartXPBars = true, themePartBags = true,
     themePartTooltips = true, themePartMenus = true, themePartChat = true, themePartQuestTracker = true, [OTHER] = true,
     themePartAddons = true, [BORDERS] = true, [BUTTONS] = true, [TABS] = true, [SCROLL_BARS] = true, [DROPDOWNS] = true }
 

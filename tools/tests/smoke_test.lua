@@ -260,6 +260,26 @@ if ns.IsForbidden then
     print((ok and "PASS" or "FAIL") .. " forbidden: a frame refusing its name is left alone")
     if not ok then os.exit(1) end
 end
+-- A bag bar button's picture: slot art (Bag slots) while the slot is empty and for the key ring, the bag's own icon
+-- (Bag icons) once a bag is in it.
+if ns.ThemePartOf then
+    local bagSlot = NewFrame(nil, "CharacterBag0Slot")
+    local icon = NewFrame(nil, "CharacterBag0SlotIconTexture")
+    rawset(icon, "GetParent", function() return bagSlot end)
+    local ring = NewFrame(nil, "KeyRingButtonIconTexture")
+    rawset(ring, "GetParent", function() return NewFrame(nil, "KeyRingButton") end)
+    env.C_Container = { ContainerIDToInventoryID = function(id) return 19 + id end }
+    local asked, held = nil, nil
+    env.GetInventoryItemID = function(_, slot) asked = slot return held end
+    local empty = ns.ThemePartOf(icon)
+    held = 4500
+    local filled = ns.ThemePartOf(icon)
+    local ok = empty == "themePartBagSlots" and filled == "themePartBagIcons" and asked == 20
+        and ns.ThemePartOf(ring) == "themePartBagSlots"
+    print((ok and "PASS" or "FAIL") .. " bag slots: empty " .. tostring(empty) .. ", with a bag " .. tostring(filled)
+        .. ", key ring " .. tostring(ns.ThemePartOf(ring)))
+    if not ok then os.exit(1) end
+end
 -- The Forever welcome: on Forever a line with both its links, nowhere else.
 local function Welcomed()
     for _, line in ipairs(printed) do

@@ -27,6 +27,8 @@ ns.TOGGLES = {
     { "themePartPageArrows", L["OPT_themePartPageArrows"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartMicroMenu", L["OPT_themePartMicroMenu"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartBagBar", L["OPT_themePartBagBar"], nil, parent = "bronzeTheme", checks = "themeParts" },
+    { "themePartBagSlots", L["OPT_themePartBagSlots"], L["OPT_themePartBagSlots_TIP"], parent = "bronzeTheme",
+        checks = "themeParts" },
     { "themePartBagIcons", L["OPT_themePartBagIcons"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartXPBars", L["OPT_themePartXPBars"], nil, parent = "bronzeTheme", checks = "themeParts" },
     { "themePartBags", L["OPT_themePartBags"], nil, parent = "bronzeTheme", checks = "themeParts" },

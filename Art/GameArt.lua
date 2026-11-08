@@ -532,6 +532,17 @@ end)
 ns.EventFrame("NAME_PLATE_UNIT_ADDED", function()
     if ns.ready then ns.Sched.NextFrame("gameArt.plates", NewPlates) end
 end)
+-- A bag put in or taken out: its slot's picture is slot art or a bag's icon now (Bag slots, Bag icons).
+local function BagsChanged()
+    local bar = _G.BagsBar
+    if not (bar and ns.ThemeFor()) then return end
+    wipe(want)
+    WalkRoot(bar)
+    Tint()
+end
+ns.EventFrame("BAG_UPDATE_DELAYED", function()
+    if ns.ready then ns.Sched.NextFrame("gameArt.bags", BagsChanged) end
+end)
 
 -- After every other module (last in ns.MODULE_ORDER), in a fight too: only colours change.
 ns.RegisterModule("bronzeTheme", { id = "gameArt", apply = Sync, restore = Sync, inFight = true })
