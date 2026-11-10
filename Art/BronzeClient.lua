@@ -457,12 +457,16 @@ end)
 -- A rim stays and follows every toggle (ns.BronzeKeep), so only buttons made since the last pass need one.
 local EachChild = ns.EachChild
 local function AuraRim(button)
-    if button == nil then return end
+    -- The target's aura buttons refuse addon calls while saying they are not forbidden (12.x): never asked.
+    if button == nil or ns.IsForbidden(button) then return end
     local icon = button.Icon or button.icon
     if icon and icon.IsObjectType and icon:IsObjectType("Texture") and not button.fcpBronzeRim then
         ns.BronzeRim(button, icon)
     end
 end
+
+-- Read by the dev addon's auras probe.
+B.AuraRim = AuraRim
 
 local function AuraRims(container)
     if not container or not container.GetChildren then return end

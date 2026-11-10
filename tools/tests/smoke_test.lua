@@ -260,6 +260,19 @@ if ns.IsForbidden then
     print((ok and "PASS" or "FAIL") .. " forbidden: a frame refusing its name is left alone")
     if not ok then os.exit(1) end
 end
+-- The aura rim pass meets those buttons too (every half second with a target's auras): one refusing every call, with
+-- its icon there, is passed over without an error.
+if ns.bronze and ns.bronze.AuraRim then
+    local function Refuse() error("Attempt to access forbidden object from code tainted by an AddOn") end
+    local aura = setmetatable({}, { __index = function(_, k)
+        if k == "IsForbidden" then return function() return false end end
+        return Refuse
+    end })
+    rawset(aura, "Icon", aura)
+    local ok, err = pcall(ns.bronze.AuraRim, aura)
+    print((ok and "PASS" or "FAIL") .. " aura rims: a refusing aura button is passed over" .. (ok and "" or (": " .. tostring(err))))
+    if not ok then os.exit(1) end
+end
 -- A bag bar button's picture: slot art (Bag slots) while the slot is empty and for the key ring, the bag's own icon
 -- (Bag icons) once a bag is in it.
 if ns.ThemePartOf then
