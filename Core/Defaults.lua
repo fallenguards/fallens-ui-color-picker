@@ -2,7 +2,7 @@ if select(2, ...).INERT then return end
 local _, ns = ...
 
 -- Saved settings' layout version: a change to what a saved setting means gets a migration in Core.lua and a bump here.
-ns.DB_VERSION = 1
+ns.DB_VERSION = 2
 
 ns.DB_DEFAULTS = {
     bronzeTheme = false,
@@ -17,6 +17,7 @@ ns.DB_DEFAULTS = {
     texturedBars = true, texturedCharacter = true, texturedSpellbook = true, texturedWindows = true,
     themePartParchment = true, themePartUnits = true, themePartMinimap = true, themePartBars = true, themePartBags = true,
     themePartTooltips = true, themePartChat = false, themePartWindows = true, themePartCastBars = true,
+    themePartSwingTimers = true, themePartMirrorTimers = true,
     themePartNameplates = true, themePartPageArrows = true, themePartMicroMenu = true, themePartBagBar = true,
     themePartBagSlots = true,
     themePartXPBars = true, themePartMenus = true, themePartQuestTracker = true, themePartBagIcons = false, themePartAddons = false,

@@ -90,6 +90,8 @@ local PartOf = ns.PartFinder({
         "FocusFrameToT", "BossTargetFrameContainer" },
     themePartCastBars = { "PlayerCastingBarFrame", "PetCastingBarFrame", "TargetFrameSpellBar", "FocusFrameSpellBar",
         "OverlayPlayerCastingBarFrame" },
+    themePartSwingTimers = { "SwingTimerMainHandFrame", "SwingTimerOffHandFrame", "SwingTimerRangedFrame" },
+    themePartMirrorTimers = { "MirrorTimerContainer", "MirrorTimer1", "MirrorTimer2", "MirrorTimer3" },
     themePartMinimap = { "MinimapCluster", "Minimap", "QueueStatusButton", "FallensUIColorPickerMinimapBag", "GameTimeFrame",
         "TimeManagerClockButton" },
     themePartBars = ACTION_ROOTS,
@@ -218,7 +220,7 @@ end
 
 -- Each part's row; a theme change repaints on it as on any theme setting.
 local PART_KEYS = { themePartParchment = true, themePartUnits = true, themePartCastBars = true,
-    themePartNameplates = true, themePartMinimap = true, themePartBars = true, themePartPageArrows = true,
+    themePartSwingTimers = true, themePartMirrorTimers = true, themePartNameplates = true, themePartMinimap = true, themePartBars = true, themePartPageArrows = true,
     themePartMicroMenu = true, themePartBagBar = true, themePartBagSlots = true, themePartBagIcons = true,
     themePartXPBars = true, themePartBags = true,
     themePartTooltips = true, themePartMenus = true, themePartChat = true, themePartQuestTracker = true, [OTHER] = true,

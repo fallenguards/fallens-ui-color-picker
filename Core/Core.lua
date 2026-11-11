@@ -390,10 +390,16 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         ns.db = FallensUIColorPickerDB
         -- Saved by the build made from ClassicUI Forever (its dbVersion, past ours): it switched every setting outside
         -- the theme off, the minimap button too. The theme's picks stay; the rest starts at our defaults.
-        if (tonumber(ns.db.dbVersion) or 0) > ns.DB_VERSION then
+        local version = tonumber(ns.db.dbVersion) or 0
+        if version > ns.DB_VERSION then
             for key in pairs(ns.db) do
                 if ns.DB_DEFAULTS[key] == nil or key == "minimapButton" then ns.db[key] = nil end
             end
+            version = 1
+        end
+        -- 2: the swing timers and breath bar left Other windows for rows of their own, each starting as it was.
+        if version < 2 and ns.db.themePartWindows == false then
+            ns.db.themePartSwingTimers, ns.db.themePartMirrorTimers = false, false
         end
         ns.CopyDefaults(ns.db, ns.DB_DEFAULTS)
         ns.db.dbVersion = ns.DB_VERSION

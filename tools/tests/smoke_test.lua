@@ -1,11 +1,13 @@
 -- Loads an addon's toc files against a stubbed game, then runs ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD and
--- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name> [inert|old|era|forever]
--- inert: the full ClassicUI Forever enabled; old: settings saved by the build made from ClassicUI Forever; era: the
--- Classic Era client; forever: WoW Forever, its login timers run once (the welcome line).
+-- every frame's OnUpdate a few times. Usage: lua smoke_test.lua <addon dir> <toc> <addon name>
+-- [inert|old|split|era|forever]
+-- inert: the full ClassicUI Forever enabled; old: settings saved by the build made from ClassicUI Forever; split: a
+-- 1.x save with Other windows off; era: the Classic Era client; forever: WoW Forever, its login timers run once (the
+-- welcome line).
 -- luacheck: std lua54
 -- luacheck: ignore 111 112 113 121 122 212
 local dir, tocName, addon, inert, old = arg[1], arg[2], arg[3], arg[4] == "inert", arg[4] == "old"
-local era, forever = arg[4] == "era", arg[4] == "forever"
+local era, forever, split = arg[4] == "era", arg[4] == "forever", arg[4] == "split"
 
 local Stub
 local stubMeta = {}
@@ -132,6 +134,9 @@ _G.getmetatable = getmetatable
 if old then
     _G.FallensUIColorPickerDB = { dbVersion = 29, minimapButton = false, bronzeTheme = true, themeDark = true,
         themeBronze = false, welcomed = false, profiles = {}, windowPos = {} }
+elseif split then
+    _G.FallensUIColorPickerDB = { dbVersion = 1, bronzeTheme = true, themeDark = true, themeBronze = false,
+        themePartWindows = false }
 end
 local ns = {}
 local toc = assert(io.open(dir .. "/" .. tocName)):read("a")
@@ -176,10 +181,20 @@ end
 if old then
     local db = _G.FallensUIColorPickerDB
     local ok = db.minimapButton == true and db.bronzeTheme == true and db.themeDark == true and db.profiles == nil
-        and db.dbVersion == 1
+        and db.dbVersion == ns.DB_VERSION
     print((ok and "PASS" or "FAIL") .. " old settings: minimap button " .. tostring(db.minimapButton) .. ", theme kept "
         .. tostring(db.bronzeTheme and db.themeDark) .. ", leftovers gone " .. tostring(db.profiles == nil))
     if not ok then os.exit(1) end
+end
+-- The rows split from Other windows start as it was saved.
+if split then
+    local db = _G.FallensUIColorPickerDB
+    local ok = db.themePartWindows == false and db.themePartSwingTimers == false and db.themePartMirrorTimers == false
+        and db.themePartCastBars == true and db.dbVersion == ns.DB_VERSION
+    print((ok and "PASS" or "FAIL") .. " split rows: swing timers " .. tostring(db.themePartSwingTimers)
+        .. ", breath bar " .. tostring(db.themePartMirrorTimers) .. " with Other windows off")
+    if not ok then os.exit(1) end
+    db.themePartWindows, db.themePartSwingTimers, db.themePartMirrorTimers = true, true, true
 end
 if not ns.INERT then
     print("db " .. tostring(ns.db ~= nil) .. ", modules " .. #(ns.modules or {}) .. ", slash " .. tostring(ns.SLASH))
@@ -291,6 +306,29 @@ if ns.ThemePartOf then
         and ns.ThemePartOf(ring) == "themePartBagSlots"
     print((ok and "PASS" or "FAIL") .. " bag slots: empty " .. tostring(empty) .. ", with a bag " .. tostring(filled)
         .. ", key ring " .. tostring(ns.ThemePartOf(ring)))
+    if not ok then os.exit(1) end
+end
+-- The swing timers and the breath bar: rows of their own, never Other windows or its Window pieces.
+if ns.ThemePartOf then
+    local function Under(parent)
+        local f = NewFrame()
+        rawset(f, "GetParent", function() return parent end)
+        return f
+    end
+    local swing = Under(NewFrame(nil, "SwingTimerOffHandFrame"))
+    local breath = Under(Under(NewFrame(nil, "MirrorTimerContainer")))
+    Fire("ADDON_LOADED", "Blizzard_SwingTimer")
+    local db = ns.db
+    local windows, borders = db.themePartWindows, db.themePieceBorders
+    db.themePartWindows, db.themePieceBorders = false, false
+    local kept = ns.ThemePartOn(swing) and ns.ThemePartOn(breath)
+    db.themePartSwingTimers = false
+    local own = not ns.ThemePartOn(swing) and ns.ThemePartOn(breath)
+    db.themePartWindows, db.themePieceBorders, db.themePartSwingTimers = windows, borders, true
+    local ok = kept and own and ns.ThemePartOf(swing) == "themePartSwingTimers"
+        and ns.ThemePartOf(breath) == "themePartMirrorTimers"
+    print((ok and "PASS" or "FAIL") .. " timer rows: swing " .. tostring(ns.ThemePartOf(swing)) .. ", breath "
+        .. tostring(ns.ThemePartOf(breath)) .. ", kept with Other windows and Borders off " .. tostring(kept))
     if not ok then os.exit(1) end
 end
 -- The Forever welcome: on Forever a line with both its links, nowhere else.
