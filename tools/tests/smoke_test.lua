@@ -56,6 +56,12 @@ local function NewFrame(_, name)
     rawset(f, "CreateTexture", function() return NewFrame() end)
     rawset(f, "CreateFontString", function() return NewFrame() end)
     rawset(f, "CreateMaskTexture", function() return NewFrame() end)
+    local size = {}
+    rawset(f, "SetSize", function(self, w, h) size.w, size.h = w, h end)
+    rawset(f, "GetWidth", function() return size.w or 1 end)
+    rawset(f, "GetHeight", function() return size.h or 1 end)
+    rawset(f, "SetScrollChild", function(self, child) size.child = child end)
+    rawset(f, "GetScrollChild", function() return size.child end)
     f.scripts, f.events = scripts, events
     frames[#frames + 1] = f
     if type(name) == "string" then _G[name] = f end
@@ -202,6 +208,20 @@ if not ns.INERT then
         local ok, err = pcall(ns[fn])
         print(fn .. (ok and " ran" or (" ERROR " .. tostring(err))))
     end
+    -- The settings window shown holds the content in its scroll frame; widened, the grids take more columns.
+    local win = _G.FallensUIColorPickerSettings
+    local held, before, after
+    local shown, showErr = pcall(function()
+        win.scripts.OnShow(win)
+        for _, f in ipairs(frames) do held = held or f:GetScrollChild() end
+        before = held:GetHeight()
+        win.scripts.OnSizeChanged(win, 2000)
+        after = held:GetHeight()
+    end)
+    local fits = shown and after < before
+    print((fits and "PASS" or "FAIL") .. " settings window: content scrolled, " .. tostring(before) .. " high, "
+        .. tostring(after) .. " widened" .. (shown and "" or (": " .. tostring(showErr))))
+    if not fits then os.exit(1) end
     ns.db.bronzeTheme, ns.db.themeDark, ns.db.themeBronze = true, true, false
     local ok, err = pcall(ns.ToggleChanged, "bronzeTheme")
     print("theme on (Dark) " .. (ok and "ran" or ("ERROR " .. tostring(err))))

@@ -1,7 +1,7 @@
 if select(2, ...).INERT then return end
 local _, ns = ...
 
--- Our windows: dragging and tooltips.
+-- Our windows: dragging, sizing and tooltips.
 
 -- StartMoving drops every anchor of a frame move watchers hang on: they let go for the drag.
 local function DragStart(self)
@@ -30,6 +30,34 @@ function ns.MakeDraggable(frame, onStop)
     frame:SetScript("OnDragStart", DragStart)
     frame:SetScript("OnDragStop", DragStop)
     frame:SetClampedToScreen(true)
+end
+
+-- A size grip in a window's bottom right corner, the chat window's art; onStop(frame) runs after a resize. The window
+-- is pinned by its top left first, so that corner stays put.
+function ns.AddSizeGrip(frame, onStop)
+    frame:SetResizable(true)
+    local grip = ns.NewFrame("Button", nil, frame)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -3, 3)
+    grip:SetFrameLevel(frame:GetFrameLevel() + 10)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    grip:SetScript("OnMouseDown", function(_, button)
+        if button ~= "LeftButton" then return end
+        local left, top = frame:GetLeft(), frame:GetTop()
+        ns.Sched.LetGo(frame, true)
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+        frame:StartSizing("BOTTOMRIGHT")
+    end)
+    grip:SetScript("OnMouseUp", function(_, button)
+        if button ~= "LeftButton" then return end
+        DragStop(frame)
+        onStop(frame)
+    end)
+    frame.fcpGrip = grip   -- read by the dev probe
+    return grip
 end
 
 local function HideTip() GameTooltip:Hide() end

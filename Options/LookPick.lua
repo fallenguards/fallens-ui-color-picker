@@ -8,6 +8,7 @@ local L = ns.L
 
 local O = ns.options
 local PAD, ROW_H, CHECK_H, SLIDER_W, GAP = 20, 26, 24, 160, 12
+local BAR_GAP, FOOT_H = 6, 50   -- the scroll bar's gap; under the content: Done and its margins
 local LOOKS = {
     { label = "LOOKPICK_OWN" },
     { key = "themeDark" },
@@ -17,6 +18,7 @@ local LOOKS = {
 local syncs = {}   -- every built part's refresh
 local byKey        -- the rows by key
 local pick, settings, content, canvas
+local scroll, idle   -- the settings window's scroll frame; its child while the AddOns list holds the content
 
 -- The look showing now: false while the theme is off.
 local function Current()
@@ -154,24 +156,19 @@ local function Inline(host, entries, x, y)
     return x + #made * (widest + GAP)
 end
 
-local function Heading(host, text, y)
-    local head = host:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    head:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
-    head:SetText(text)
-    return head:GetStringHeight()
-end
-
-local COLS = 3
+local COLS = 3   -- the grids' columns at the content's first width
 local GRIDS = { { "themeParts", "OPT_DROP_THEMED" }, { "themePieces", "OPT_DROP_PIECES" } }
 
 -- The settings, top down: the looks, Textured color and its parts, the themed parts and window pieces in columns, the
 -- background shade, the elite and nameplate dragons, the minimap button and Forever welcome on one line. Built once,
--- shown in our window or the game's AddOns list (its canvas is about 600 high).
+-- shown in our window or the game's AddOns list (its canvas is about 600 high). Fit(width) lays the grids in as many
+-- columns as fit; least and wide: its narrowest width and its first.
 local function Content()
     byKey = {}
     for _, entry in ipairs(ns.TOGGLES) do byKey[entry[1]] = entry end
     local host = ns.NewFrame("Frame", nil, UIParent)
     local h, need = LookRows(host, 0, "FallensUIColorPickerSet")
+    host.looks = h
     local y = -h - 6
     if byKey.themeTextured then
         local check, cw = Check(host, byKey.themeTextured)
@@ -181,41 +178,40 @@ local function Content()
         need = math.max(need, Inline(host, Group("texturedParts"), 24, y))
         y = y - CHECK_H - GAP
     end
+    local above = -y
     -- The parts, then the window pieces, in columns as wide as the widest check of both.
-    local grids, colW = {}, 0
-    for i, grid in ipairs(GRIDS) do
+    local grid = ns.NewFrame("Frame", nil, host)
+    grid:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
+    local grids, heads, colW = {}, {}, 0
+    for i, spec in ipairs(GRIDS) do
         local made = {}
-        for j, entry in ipairs(Group(grid[1])) do
-            local check, cw = Check(host, entry)
+        for j, entry in ipairs(Group(spec[1])) do
+            local check, cw = Check(grid, entry)
             made[j], colW = check, math.max(colW, cw)
         end
         grids[i] = made
+        heads[i] = grid:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        heads[i]:SetText(L[spec[2]])
     end
-    need = math.max(need, COLS * (colW + GAP))
-    for i, made in ipairs(grids) do
-        y = y - Heading(host, L[GRIDS[i][2]], y) - 6
-        for j, check in ipairs(made) do
-            local col, line = (j - 1) % COLS, math.floor((j - 1) / COLS)
-            check:SetPoint("TOPLEFT", host, "TOPLEFT", col * (colW + GAP), y - line * CHECK_H)
-        end
-        y = y - math.ceil(#made / COLS) * CHECK_H - GAP
-    end
+    local below = ns.NewFrame("Frame", nil, host)
+    below:SetPoint("TOPLEFT", grid, "BOTTOMLEFT", 0, 0)
+    y = 0
     do
-        local head, row = O.PaneRow(host, SLIDER_W + 140)
-        head:SetPoint("TOPLEFT", host, "TOPLEFT", -4, y)
+        local head, row = O.PaneRow(below, SLIDER_W + 140)
+        head:SetPoint("TOPLEFT", below, "TOPLEFT", -4, y)
         row:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, 0)
         syncs[#syncs + 1] = function() row:SetEnabled(ns.db.bronzeTheme == true) end
         y = y - 56 - GAP
     end
     if byKey.themeIgnoreElite then
-        local check, cw = Check(host, byKey.themeIgnoreElite)
-        check:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
-        need = math.max(need, Inline(host, Group("themeIgnoreEliteFrames"), cw + GAP, y))
+        local check, cw = Check(below, byKey.themeIgnoreElite)
+        check:SetPoint("TOPLEFT", below, "TOPLEFT", 0, y)
+        need = math.max(need, Inline(below, Group("themeIgnoreEliteFrames"), cw + GAP, y))
         y = y - CHECK_H
     end
     if byKey.themeIgnorePlateDragon then
-        local check, cw = Check(host, byKey.themeIgnorePlateDragon)
-        check:SetPoint("TOPLEFT", host, "TOPLEFT", 0, y)
+        local check, cw = Check(below, byKey.themeIgnorePlateDragon)
+        check:SetPoint("TOPLEFT", below, "TOPLEFT", 0, y)
         need, y = math.max(need, cw), y - CHECK_H
     end
     local last = {}
@@ -223,16 +219,48 @@ local function Content()
         local entry = byKey[key]
         if entry and not (entry.hideIf and entry.hideIf()) then last[#last + 1] = entry end
     end
-    need, y = math.max(need, Inline(host, last, 0, y)), y - CHECK_H
-    host:SetSize(need, -y)
+    need, y = math.max(need, Inline(below, last, 0, y)), y - CHECK_H
+    local rest = -y
+    below:SetSize(need, rest)
+    host.least = math.max(need, colW + GAP)
+    host.wide = math.max(need, COLS * (colW + GAP))
+    function host.Fit(width)
+        width = math.max(width, host.least)
+        local cols = math.max(1, math.floor((width + GAP) / (colW + GAP)))
+        local gy = 0
+        for i, made in ipairs(grids) do
+            heads[i]:SetPoint("TOPLEFT", grid, "TOPLEFT", 0, gy)
+            gy = gy - heads[i]:GetStringHeight() - 6
+            for j, check in ipairs(made) do
+                local col, line = (j - 1) % cols, math.floor((j - 1) / cols)
+                check:SetPoint("TOPLEFT", grid, "TOPLEFT", col * (colW + GAP), gy - line * CHECK_H)
+            end
+            gy = gy - math.ceil(#made / cols) * CHECK_H - GAP
+        end
+        grid:SetSize(width, -gy)
+        host:SetSize(width, above - gy + rest)
+    end
+    host.Fit(host.wide)
     return host
 end
 
--- Our content into a holder at its top left.
+-- Our content into the AddOns list's canvas at its top left.
 local function Hold(holder, x, y)
     content = content or Content()
+    if scroll then scroll:SetScrollChild(idle) end
     content:SetParent(holder)
     ns.SetPointOnce(content, "TOPLEFT", holder, "TOPLEFT", x, y)
+    content.Fit(content.wide)
+    content:Show()
+    SyncAll()
+end
+
+-- Our content into the settings window's scroll frame, laid out for its width.
+local function Scrolled(width)
+    content = content or Content()
+    content:ClearAllPoints()
+    scroll:SetScrollChild(content)
+    content.Fit(width)
     content:Show()
     SyncAll()
 end
@@ -283,12 +311,37 @@ local function BuildPick()
     return frame
 end
 
+-- The settings in the game's scroll frame (each client's own scroll bar), sized from the corner grip and kept; at first
+-- the content's width and half its height.
 local function BuildSettings()
     local frame = Window("FallensUIColorPickerSettings")
     content = content or Content()
-    frame:SetSize(content:GetWidth() + 2 * PAD, 30 + content:GetHeight() + 14 + 22 + 14)
-    DoneButton(frame):SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -PAD + 4, 14)
-    frame:SetScript("OnShow", function() Hold(frame, PAD, -30) end)
+    scroll = ns.NewFrame("ScrollFrame", nil, frame, "ScrollFrameTemplate")
+    idle = ns.NewFrame("Frame", nil, scroll)
+    local bar = scroll.ScrollBar
+    local side = bar:GetWidth() + BAR_GAP
+    scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", PAD, -30)
+    scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -PAD - side, FOOT_H)
+    bar:ClearAllPoints()
+    bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", BAR_GAP, 0)
+    bar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", BAR_GAP, 0)
+    bar:SetHideIfUnscrollable(true)
+    local chromeW, chromeH = 2 * PAD + side, 30 + FOOT_H
+    local maxW, maxH = UIParent:GetWidth(), UIParent:GetHeight()
+    local minW, minH = content.least + chromeW, chromeH + content.looks
+    frame:SetResizeBounds(minW, minH, maxW, maxH)
+    local db = ns.db
+    local w = db.settingsWidth or content.wide + chromeW
+    local h = db.settingsHeight or math.floor((chromeH + content:GetHeight()) / 2)
+    frame:SetSize(math.min(math.max(w, minW), maxW), math.min(math.max(h, minH), maxH))
+    DoneButton(frame):SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -PAD - 2, 14)
+    ns.AddSizeGrip(frame, function(self)
+        db.settingsWidth, db.settingsHeight = math.floor(self:GetWidth() + 0.5), math.floor(self:GetHeight() + 0.5)
+    end)
+    frame:HookScript("OnSizeChanged", function(_, width)
+        if scroll:GetScrollChild() == content then content.Fit(width - chromeW) end
+    end)
+    frame:SetScript("OnShow", function(self) Scrolled(self:GetWidth() - chromeW) end)
     return frame
 end
 
