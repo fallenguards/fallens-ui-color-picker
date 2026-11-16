@@ -2,7 +2,7 @@
 ## Title: Fallen's UI Color Picker
 ## Notes: Recolor the game's whole interface: dark, bronze or any color you pick, on WoW Forever, retail and Classic Era.
 ## Author: justawower
-## Version: 1.1.0
+## Version: 1.2.0
 ## X-Curse-Project-ID: 1772092
 ## IconTexture: Interface\Icons\INV_Misc_Gem_Variety_01
 ## Category: UI

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0] - 2026-11-16
+
+### Added
+- Swing timers and Breath and fatigue bars rows under Themed, on by default, so those bars no longer go with Other windows. If Other windows was unchecked, both start unchecked and nothing changes until you check them. Swing timers shows on WoW Forever only, where the game has one.
+
+### Changed
+- The settings window opens at half its height with a scroll bar. Drag the grip in its bottom right corner to resize it; the size is kept. Wider, the Themed and Window pieces checkboxes spread into more columns.
+
+### Fixed
+- The error around combat when the target frame redrew could still come from the rim drawn around the target's and focus's aura icons; that now leaves those buttons alone too.
+
 ## [1.1.0] - 2026-11-08
 
 ### Added
